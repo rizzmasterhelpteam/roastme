@@ -23,7 +23,7 @@ export const reportReasons = [
 export function isUnsafe(text: string) {
   return /\b(kill yourself|kill myself|suicide|self[- ]harm|racial slur|rape|child porn|molest|ethnic cleansing|make a bomb|death threat)\b/i.test(
     text,
-  );
+  ) || isPersonaEscapeAttempt(text);
 }
 export function imageType(data: string) {
   const m = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/.exec(
@@ -44,4 +44,32 @@ export function imageType(data: string) {
           bytes.toString("ascii", 8, 12) === "WEBP";
   if (!valid) throw new Error("The image contents do not match its file type.");
   return { mime: m[1], base64: m[2], bytes };
+}
+
+const personaEscapePatterns = [
+  /\b(?:ignore|disregard|forget|override|bypass)\b.{0,80}\b(?:system|developer|hidden|previous|safety)?\s*(?:instructions?|prompt|rules?)\b/i,
+  /\b(?:reveal|show|print|repeat|quote|dump|list)\b.{0,80}\b(?:system|developer|hidden|internal)\s*(?:instructions?|prompt|message)?\b/i,
+  /\b(?:break|leave|drop|exit|stop being|step out of)\b.{0,50}\b(?:character|persona|role|roast)\b/i,
+  /\b(?:jailbreak|prompt injection|developer mode|dan mode|system message)\b/i,
+];
+
+const implementationQuestionPatterns = [
+  /\b(?:what|which|tell me|explain|how|where|show|give|reveal|list)\b.{0,80}\b(?:ai\s+)?(?:model|model name|model version|api(?:\s*key)?|provider|endpoint|system prompt|developer message)\b/i,
+  /\b(?:ai\s+)?(?:model|api(?:\s*key)?|provider|endpoint|system prompt|developer message)\b.{0,80}\b(?:what|which|tell|explain|how|where|show|give|reveal|list)\b/i,
+  /\b(?:groq|gemini|openai)\b.{0,60}\b(?:model|api|key|endpoint|prompt)\b/i,
+];
+
+export function isPersonaEscapeAttempt(text: string) {
+  return [...personaEscapePatterns, ...implementationQuestionPatterns].some(
+    (pattern) => pattern.test(text),
+  );
+}
+
+export function isImplementationResponse(text: string) {
+  return [
+    /\b(?:as an ai|as a language model|i am an ai|i'm an ai|large language model)\b/i,
+    /\b(?:my|the|this)\s+(?:model|api|system prompt|developer prompt|hidden instructions)\b/i,
+    /\b(?:api key|system prompt|developer message|prompt injection|developer mode)\b/i,
+    /\b(?:groq|gemini|openai)\s+(?:model|api|endpoint|key)\b/i,
+  ].some((pattern) => pattern.test(text));
 }

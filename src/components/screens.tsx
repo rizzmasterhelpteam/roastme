@@ -1,7 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -467,7 +473,7 @@ function InstaChatScreen({
 }: {
   initialPersonaId?: string;
 }) {
-  const { state, api, level, chaos, toast } = useApp();
+  const { state, api, level, chaos, toast, ready } = useApp();
   const [selected, setSelected] = useState(initialPersonaId);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
@@ -477,8 +483,11 @@ function InstaChatScreen({
   const [attachedImage, setAttachedImage] = useState("");
   const [attachedFileName, setAttachedFileName] = useState("");
   const [sessionId, setSessionId] = useState("");
+  const [newChatConfirmOpen, setNewChatConfirmOpen] = useState(false);
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   const endRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const initialScrollDoneRef = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -494,20 +503,59 @@ function InstaChatScreen({
     }
   }, [initialPersonaId]);
 
+  useEffect(() => {
+    if (!ready) return;
+    const latestSession = state.history.find(
+      (r) =>
+        r.persona === selected &&
+        (r.type === "chat" || r.type === "image" || !r.type) &&
+        r.session_id,
+    )?.session_id;
+    setSessionId(latestSession || crypto.randomUUID());
+  }, [ready, selected]);
+
+  const activeSessionId =
+    sessionId ||
+    state.history.find(
+      (r) =>
+        r.persona === selected &&
+        (r.type === "chat" || r.type === "image" || !r.type) &&
+        r.session_id,
+    )?.session_id;
   const messages = state.history
     .filter(
       (r) =>
         r.persona === selected &&
+        (!activeSessionId || r.session_id === activeSessionId) &&
         (r.type === "chat" || r.type === "image" || !r.type),
     )
     .slice()
     .reverse();
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages.length, busy]);
+  useLayoutEffect(() => {
+    if (!ready) return;
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const firstLoadedView = !initialScrollDoneRef.current;
+    initialScrollDoneRef.current = true;
+    const frame = window.requestAnimationFrame(() => {
+      viewport.scrollTo({
+        top: viewport.scrollHeight,
+        behavior: firstLoadedView ? "auto" : "smooth",
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [
+    ready,
+    selected,
+    messages.length,
+    messages[messages.length - 1]?.id,
+    busy,
+  ]);
 
   function startNewChat() {
+    setNewChatConfirmOpen(false);
     setSessionId(crypto.randomUUID());
     setPrompt("");
     setAttachedImage("");
@@ -697,15 +745,16 @@ function InstaChatScreen({
             type="button"
             className="insta-heat-btn"
             onClick={() => setControlOpen(true)}
-            title="Adjust Roast Heat"
+            title="Adjust Roast Chaos"
           >
             <Flame size={15} />
-            <span>{level}</span>
+            <span>{chaos}%</span>
           </button>
           <button
             type="button"
             className="insta-icon-btn"
-            onClick={startNewChat}
+            onClick={() => setNewChatConfirmOpen(true)}
+            disabled={busy}
             title="Start fresh conversation"
             aria-label="Start fresh chat"
           >
@@ -786,7 +835,7 @@ function InstaChatScreen({
       </header>
 
       {/* Main Chat Thread */}
-      <div className="insta-chat-viewport">
+      <div ref={viewportRef} className="insta-chat-viewport">
         <DemoNotice />
 
         {/* Empty State / Instagram DM Profile Card */}
@@ -1059,6 +1108,27 @@ function InstaChatScreen({
               Save & keep roasting
             </Button>
           </div>
+        </Modal>
+      )}
+      {newChatConfirmOpen && (
+        <Modal
+          title="Start a fresh chat?"
+          onClose={() => setNewChatConfirmOpen(false)}
+        >
+          <p className="muted">
+            Clear this conversation from the chat view and start a clean one
+            with {p.name}? Your previous messages remain available in History
+            and any saved roasts stay in Saved roasts.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => setNewChatConfirmOpen(false)}
+          >
+            Keep current chat
+          </Button>
+          <Button variant="danger" onClick={startNewChat}>
+            <RefreshCw size={17} /> Start fresh chat
+          </Button>
         </Modal>
       )}
     </div>
@@ -1394,7 +1464,7 @@ function ComposerScreen({
   mode?: "text" | "chat" | "image";
   personaId?: string;
 }) {
-  const { state, api, level, chaos, toast } = useApp();
+  const { state, api, level, chaos, toast, ready } = useApp();
   const [prompt, setPrompt] = useState(""),
     [selected, setSelected] = useState(personaId),
     [busy, setBusy] = useState(false),
@@ -1407,7 +1477,9 @@ function ComposerScreen({
     [sessionId, setSessionId] = useState(""),
     [resultId, setResultId] = useState("");
   const fileRef = useRef<HTMLInputElement>(null),
-    end = useRef<HTMLDivElement>(null);
+    end = useRef<HTMLDivElement>(null),
+    chatViewport = useRef<HTMLDivElement>(null),
+    initialChatScrollDone = useRef(false);
   const p = findPersona(selected);
   const messages = state.history
     .filter((r) =>
@@ -1415,9 +1487,28 @@ function ComposerScreen({
     )
     .slice()
     .reverse();
-  useEffect(() => {
-    end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages.length, busy]);
+  useLayoutEffect(() => {
+    if (mode !== "chat" || !ready) return;
+    const viewport = chatViewport.current;
+    if (!viewport) return;
+
+    const firstLoadedView = !initialChatScrollDone.current;
+    initialChatScrollDone.current = true;
+    const frame = window.requestAnimationFrame(() => {
+      viewport.scrollTo({
+        top: viewport.scrollHeight,
+        behavior: firstLoadedView ? "auto" : "smooth",
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [
+    mode,
+    ready,
+    sessionId,
+    messages.length,
+    messages[messages.length - 1]?.id,
+    busy,
+  ]);
   async function upload(file?: File) {
     if (!file) return;
     if (
@@ -1514,7 +1605,7 @@ function ComposerScreen({
           >
             <SettingsIcon size={15} />
             <span>
-              {level} · {chaos}%
+              Chaos {chaos}%
             </span>
           </button>
         </div>
@@ -1597,7 +1688,7 @@ function ComposerScreen({
         </>
       )}
       {mode === "chat" && (
-        <div className="chat-messages">
+        <div ref={chatViewport} className="chat-messages">
           {!messages.length && (
             <>
               <div className="chat-intro">
@@ -2259,6 +2350,7 @@ function Battle({ live: _live = false }: { live?: boolean }) {
   }, [rounds, phase, busy]);
 
   const opponent = findPersona(opponentId);
+  const savedCount = state.history.filter((r) => r.saved).length;
   const totalBattles = stats.wins + stats.losses;
   const winRate =
     totalBattles > 0 ? Math.round((stats.wins / totalBattles) * 100) : 0;
@@ -2290,6 +2382,8 @@ function Battle({ live: _live = false }: { live?: boolean }) {
         const topicContext = topic.trim()
           ? `\nBattle topic: ${topic.trim()}`
           : "";
+        const battleChaos =
+          difficulty === "Hard" ? 88 : difficulty === "Medium" ? 62 : 28;
         const res = await api("roast", {
           prompt: `[ROAST BATTLE ROUND ${currentRound} against ${opponent.name} (Difficulty: ${difficulty})]${topicContext}\nPlayer's roast: ${promptText}`,
           persona: opponent.id,
@@ -2299,7 +2393,7 @@ function Battle({ live: _live = false }: { live?: boolean }) {
               : difficulty === "Medium"
                 ? "Spicy"
                 : "Light",
-          chaos: 65,
+          chaos: battleChaos,
           type: "chat",
           requestId: crypto.randomUUID(),
         });
@@ -2493,7 +2587,24 @@ function Battle({ live: _live = false }: { live?: boolean }) {
     <div
       className={`screen-narrow battle-page-container ${phase === "lobby" ? "battle-lobby-page" : ""}`}
     >
-      <Back label="Back to roast room" />
+      <div className="battle-page-toolbar">
+        <Back label="Back to roast room" />
+        <Link
+          href="/saved"
+          className="battle-saved-link insta-icon-btn insta-heart-nav-btn"
+          aria-label="View saved roasts"
+          title="Saved roasts"
+        >
+          <Heart
+            size={18}
+            fill={savedCount > 0 ? "#f43f5e" : "none"}
+            color={savedCount > 0 ? "#f43f5e" : "currentColor"}
+          />
+          {savedCount > 0 && (
+            <span className="insta-heart-badge-count">{savedCount}</span>
+          )}
+        </Link>
+      </div>
 
       {/* LOBBY VIEW */}
       {phase === "lobby" && (

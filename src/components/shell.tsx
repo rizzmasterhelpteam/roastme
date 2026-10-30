@@ -225,18 +225,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <Swords size={20} />
           <span>Battle</span>
         </Link>
-        <Link href="/saved" className={path === "/saved" ? "active" : ""}>
-          <span className="mobile-nav-heart-wrap">
-            <Heart
-              size={20}
-              fill={path === "/saved" || savedCount > 0 ? "#f43f5e" : "none"}
-              color={
-                path === "/saved" || savedCount > 0 ? "#f43f5e" : "currentColor"
-              }
-            />
-            {savedCount > 0 && <span className="mobile-saved-dot" />}
-          </span>
-          <span>Saved</span>
+        <Link
+          href="/settings"
+          className={path === "/settings" || path === "/profile" ? "active" : ""}
+        >
+          <Settings size={20} />
+          <span>Settings</span>
         </Link>
       </nav>
 

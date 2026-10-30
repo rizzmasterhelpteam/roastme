@@ -1,43 +1,18 @@
 "use client";
 import { Info, Flame } from "lucide-react";
 import { useApp } from "./app-provider";
-import { levels } from "@/lib/personas";
+import { levelFromChaos } from "@/lib/personas";
 export function Controls({ compact = false }: { compact?: boolean }) {
-  const { level, setLevel, chaos, setChaos } = useApp();
+  const { chaos, setChaos } = useApp();
+  const level = levelFromChaos(chaos);
   return (
     <section className={`controls ${compact ? "compact" : ""}`}>
-      <div className="control-label">
-        Roast level <Info size={13} />
-        <span>How much can you handle?</span>
-      </div>
-      <div className="level-grid">
-        {levels.map((l, i) => (
-          <button
-            key={l}
-            className={`level-option ${level === l ? "selected" : ""}`}
-            onClick={() => setLevel(l)}
-            aria-pressed={level === l}
-          >
-            <span>{["🙂", "🌶️", "🔥", "☢️"][i]}</span>
-            <b>{l}</b>
-            {!compact && (
-              <small>
-                {
-                  [
-                    "Playful and friendly",
-                    "A little kick",
-                    "No sugarcoating",
-                    "Maximum comedy",
-                  ][i]
-                }
-              </small>
-            )}
-          </button>
-        ))}
-      </div>
       <div className="control-label chaos-label">
-        Chaos level <Info size={13} />
-        <b>{chaos}%</b>
+        Roast chaos <Info size={13} />
+        <span>More chaos means wilder and sharper roasts.</span>
+        <b>
+          {level} · {chaos}%
+        </b>
       </div>
       <input
         type="range"
@@ -45,21 +20,24 @@ export function Controls({ compact = false }: { compact?: boolean }) {
         max="100"
         value={chaos}
         onChange={(e) => setChaos(Number(e.target.value))}
-        aria-label="Chaos level"
+        aria-label="Roast chaos and intensity"
         style={{ "--range": `${chaos}%` } as React.CSSProperties}
       />
       <div className="range-labels">
-        <span>Calm</span>
-        <span>Balanced</span>
-        <span>Unhinged</span>
+        <span>Playful</span>
+        <span>Spicy</span>
+        <span>Savage</span>
+        <span>Nuclear</span>
       </div>
       <div className="chaos-note">
         <Flame size={15} />
         {chaos < 34
-          ? "Clean punchlines. A gentle simmer."
-          : chaos < 70
-            ? "A healthy amount of questionable energy."
-            : "Absurd tangents. Delightfully unpredictable."}
+          ? "Clean punchlines and a gentle simmer."
+          : chaos < 60
+            ? "Sharper angles with a little surprise."
+            : chaos < 80
+              ? "Savage punchlines with unpredictable turns."
+              : "Nuclear energy. Absurd, wild and ruthless—but playful."}
       </div>
     </section>
   );

@@ -106,6 +106,13 @@ export type PersonaId = (typeof personas)[number]["id"];
 export const findPersona = (id: string) =>
   personas.find((p) => p.id === id) || personas[0];
 export const levels = ["Light", "Spicy", "Savage", "Nuclear"] as const;
+export type RoastLevel = (typeof levels)[number];
+export function levelFromChaos(chaos: number): RoastLevel {
+  if (chaos < 34) return "Light";
+  if (chaos < 60) return "Spicy";
+  if (chaos < 80) return "Savage";
+  return "Nuclear";
+}
 export type Roast = {
   id: string;
   content: string;

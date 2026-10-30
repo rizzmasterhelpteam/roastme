@@ -6,7 +6,11 @@ import {
   useEffect,
   useState,
 } from "react";
-import { defaultState, type AppState } from "@/lib/personas";
+import {
+  defaultState,
+  levelFromChaos,
+  type AppState,
+} from "@/lib/personas";
 import { browserSupabase } from "@/lib/supabase";
 import { isNative, authRedirect } from "@/lib/native/platform";
 type ApiBody = Record<string, unknown>;
@@ -41,7 +45,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [ready, setReady] = useState(false),
     [notice, setNotice] = useState(""),
     [level, setLevel] = useState("Spicy"),
-    [chaos, setChaos] = useState(50);
+    [chaos, setChaosState] = useState(50);
+  const setChaos = useCallback((value: number) => {
+    const next = Math.max(0, Math.min(100, Math.round(value)));
+    setChaosState(next);
+    setLevel(levelFromChaos(next));
+  }, []);
   const toast = useCallback((text: string) => setNotice(text), []);
   useEffect(() => {
     const dark = state.settings.dark !== false;
@@ -161,8 +170,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     try {
       const saved = JSON.parse(localStorage.getItem("roast-controls") || "{}");
-      if (saved.level) setLevel(saved.level);
       if (typeof saved.chaos === "number") setChaos(saved.chaos);
+      else if (saved.level) setLevel(saved.level);
     } catch {}
     return () => {
       mounted = false;

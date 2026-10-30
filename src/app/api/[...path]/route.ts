@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { backend, getState, ensure, ApiError } from "@/lib/server/backend";
 import { generate, demoRoast, SafetyError } from "@/lib/server/providers";
 import { generationSchema, imageType, reportReasons } from "@/lib/validation";
-import type { Roast } from "@/lib/personas";
+import { levelFromChaos, type Roast } from "@/lib/personas";
 import { isAllowedOrigin, corsHeaders } from "@/lib/api-origin";
 import { syncRevenueCat } from "@/lib/server/android-monetization";
 export const runtime = "nodejs";
@@ -192,7 +192,7 @@ async function handle(
             p_session: input.sessionId || randomUUID(),
             p_persona: input.persona,
             p_type: input.type,
-            p_level: input.level,
+            p_level: levelFromChaos(input.chaos),
             p_chaos: input.chaos,
             p_prompt: input.prompt,
             p_content: content,

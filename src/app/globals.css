@@ -6407,6 +6407,20 @@ small {
   flex-shrink: 0;
   padding-bottom: 80px;
 }
+.battle-page-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.battle-page-container .battle-page-toolbar .back-link {
+  margin: 0;
+}
+.battle-saved-link {
+  position: relative;
+  flex-shrink: 0;
+}
 
 /* Lobby View */
 .battle-lobby-wrap {
