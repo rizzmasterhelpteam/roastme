@@ -1,0 +1,548 @@
+/* Warm ivory theme, selected independently of the dark default. */
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #fbf6ed;
+  --surface: #f6ede3;
+  --surface2: #f1e4d7;
+  --line: #e6d8cb;
+  --muted: #785d55;
+  --text: #241916;
+  --orange: #a93e27;
+  --pink: #a52841;
+  --violet: #79565b;
+}
+html[data-theme="light"] body,
+html[data-theme="light"] .workspace,
+html[data-theme="light"] .page-grid,
+html[data-theme="light"] .page-content,
+html[data-theme="light"] .screen-root,
+html[data-theme="light"] .entry-layout {
+  background-color: var(--bg);
+  color: var(--text);
+}
+html[data-theme="light"] .topbar,
+html[data-theme="light"] .insta-header,
+html[data-theme="light"] .sidebar,
+html[data-theme="light"] .mobile-nav,
+html[data-theme="light"].native-app .mobile-nav {
+  background: #fbf6ed;
+  border-color: #e8dacf;
+}
+html[data-theme="light"] .mobile-nav > a,
+html[data-theme="light"].native-app .mobile-nav > a {
+  color: #805d53;
+}
+html[data-theme="light"] .mobile-nav > a.active,
+html[data-theme="light"].native-app .mobile-nav > a.active {
+  color: #a63c25;
+}
+html[data-theme="light"] .brand,
+html[data-theme="light"] .mobile-brand,
+html[data-theme="light"] .entry-brand,
+html[data-theme="light"] .page-heading h1 {
+  color: #241916;
+}
+html[data-theme="light"] .brand-ai,
+html[data-theme="light"] .mobile-brand b,
+html[data-theme="light"] .entry-brand em {
+  color: #a63c25;
+}
+html[data-theme="light"] .nav-link {
+  color: #71534e;
+}
+html[data-theme="light"] .nav-link.active,
+html[data-theme="light"] .nav-link:hover {
+  background: #f1e4d7;
+  color: #892a21;
+}
+html[data-theme="light"] .sidebar-premium,
+html[data-theme="light"] .account-link,
+html[data-theme="light"] .rail-tip,
+html[data-theme="light"] .rail-quote {
+  background: #f5e9de;
+  border-color: #e3d2c5;
+  color: #4c312c;
+}
+html[data-theme="light"] .page-heading > p,
+html[data-theme="light"] .back-link,
+html[data-theme="light"] .muted,
+html[data-theme="light"] .eyebrow {
+  color: #73594f;
+}
+html[data-theme="light"] .btn-primary,
+html[data-theme="light"] .btn-primary:hover:not(:disabled),
+html[data-theme="light"] .battle-start-btn {
+  background: #981f2c;
+  border-color: #981f2c;
+  color: #fffaf7;
+}
+html[data-theme="light"] .btn-outline {
+  background: #f7eee4;
+  border-color: #e0cfc1;
+  color: #60362c;
+}
+html[data-theme="light"] .btn-outline:hover:not(:disabled) {
+  background: #f0dfd0;
+  border-color: #bf9380;
+}
+html[data-theme="light"] .btn-ghost {
+  color: #76574c;
+}
+html[data-theme="light"] .btn-danger {
+  background: #a51e32;
+  border-color: #a51e32;
+  color: #fff;
+}
+html[data-theme="light"]
+  :is(
+    input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+    textarea,
+    select
+  ) {
+  background: #fffaf4;
+  border-color: #dfcdc0;
+  color: #281b17;
+}
+html[data-theme="light"] :is(input, textarea)::placeholder {
+  color: #8a6a5f;
+}
+html[data-theme="light"] .credit-badge,
+html[data-theme="light"] .insta-credit-btn {
+  background: #f2e2cf;
+  border-color: #ead7c3;
+  color: #6d1a21;
+}
+html[data-theme="light"] .insta-chat-screen {
+  background: #fbf6ed;
+  border-color: #e8dacf;
+}
+html[data-theme="light"] .insta-story-ring,
+html[data-theme="light"] .insta-intro-avatar-ring {
+  background: #efe0d2;
+  border-color: #e5d2c1;
+}
+html[data-theme="light"] .insta-icon-btn,
+html[data-theme="light"] .insta-account-btn,
+html[data-theme="light"] .insta-header-right > .insta-account-btn,
+html[data-theme="light"] .top-actions > a {
+  background: #f2e6da;
+  border-color: #eee0d4;
+  color: #68171e;
+}
+html[data-theme="light"] .insta-heat-btn {
+  background: #f6e4db;
+  border-color: #f2ded3;
+  color: #7a1920;
+}
+html[data-theme="light"] .insta-persona-name,
+html[data-theme="light"] .insta-profile-intro h2,
+html[data-theme="light"] .insta-item-name {
+  color: #241916;
+}
+html[data-theme="light"] .insta-online-status,
+html[data-theme="light"] .insta-intro-handle,
+html[data-theme="light"] .insta-intro-bio {
+  color: #785d55;
+}
+html[data-theme="light"] .insta-sparkle-badge,
+html[data-theme="light"] .insta-msg-author {
+  color: #8c1b27;
+}
+html[data-theme="light"] .insta-msg-time {
+  color: #886b60;
+}
+html[data-theme="light"] .insta-user-bubble {
+  background: #ad472c;
+  color: #fff;
+}
+html[data-theme="light"] .insta-assistant-bubble,
+html[data-theme="light"].native-app .insta-assistant-bubble {
+  background: #f3e8dd;
+  border-color: #f0e1d5;
+}
+html[data-theme="light"] .insta-assistant-bubble:hover {
+  background: #efe1d4;
+}
+html[data-theme="light"] .insta-assistant-bubble p,
+html[data-theme="light"].native-app .insta-assistant-bubble p {
+  color: #251a17;
+}
+html[data-theme="light"] .insta-heart-badge {
+  background: #fbf3ea;
+  border-color: #eadbd0;
+}
+html[data-theme="light"] .insta-intro-tagline {
+  color: #8d3a29;
+}
+html[data-theme="light"] .insta-intro-badge,
+html[data-theme="light"] .persona-tags > span,
+html[data-theme="light"] .insta-chip,
+html[data-theme="light"] .starter-grid button {
+  background: #f4e9de;
+  border-color: #e7d5c7;
+  color: #6d4840;
+}
+html[data-theme="light"] .insta-dropdown-panel,
+html[data-theme="light"] .insta-dropdown-item {
+  background: #fff9f1;
+  border-color: #e4d3c5;
+  color: #241916;
+}
+html[data-theme="light"] .insta-dropdown-item.selected {
+  background: #f8e9dc;
+  border-color: #b77a61;
+}
+html[data-theme="light"] .insta-item-tagline,
+html[data-theme="light"] .insta-item-label {
+  color: #76574e;
+}
+html[data-theme="light"] .insta-typing-pill {
+  background: #f2e5d8;
+  border-color: #e5d2c2;
+  color: #543a33;
+}
+html[data-theme="light"] .insta-composer-footer,
+html[data-theme="light"].native-app .insta-composer-footer {
+  background: #fbf6ed !important;
+  border-color: #eadbd0;
+}
+html[data-theme="light"] .insta-input-container,
+html[data-theme="light"].native-app .insta-input-container {
+  background: #f6ede3;
+  border-color: #e5d4c7;
+}
+html[data-theme="light"] .insta-input-container textarea {
+  background: transparent;
+  color: #281b17;
+}
+html[data-theme="light"] .insta-media-btn {
+  background: #f2e6da;
+  border-color: #eee0d4;
+  color: #6b3a30;
+}
+html[data-theme="light"] .insta-send-btn.active {
+  background: #8f1b28;
+  color: #fff;
+}
+html[data-theme="light"] .insta-send-btn:disabled {
+  color: #a9928b;
+  background: #f1e7dd;
+}
+html[data-theme="light"] .roast-actions :is(button, a),
+html[data-theme="light"] .roast-actions-compact summary {
+  color: #55332e;
+}
+html[data-theme="light"] .roast-actions :is(button, a):hover,
+html[data-theme="light"] .roast-overflow summary:hover,
+html[data-theme="light"] .roast-overflow[open] summary {
+  background: #efdfd2;
+  color: #6f2025;
+}
+html[data-theme="light"] .roast-actions button.active {
+  background: #f3ded2;
+  border-color: #d3a48e;
+  color: #9c3a26;
+}
+html[data-theme="light"] .roast-actions button.saved {
+  background: #f1d6d5;
+  border-color: #e3b6b4;
+  color: #a3233c;
+}
+html[data-theme="light"] .roast-overflow-panel {
+  background: #fff9f2;
+  border-color: #decabe;
+  box-shadow: 0 8px 24px #5d392327;
+}
+html[data-theme="light"] .demo-notice {
+  background: #f7eee4;
+  border-color: #e7d5c7;
+  color: #76564d;
+}
+html[data-theme="light"] .toast {
+  background: #fff9f2;
+  border-color: #ddc7b9;
+  color: #3c2923;
+}
+html[data-theme="light"] .saved-roast-card,
+html[data-theme="light"] .settings-row,
+html[data-theme="light"] .settings-panel,
+html[data-theme="light"] .settings-page .settings-panel,
+html[data-theme="light"] .text-composer,
+html[data-theme="light"] .result-card,
+html[data-theme="light"] .profile-card,
+html[data-theme="light"] .subscription-status,
+html[data-theme="light"] .history-card,
+html[data-theme="light"] .sample-card,
+html[data-theme="light"] .guidelines,
+html[data-theme="light"] .blocked-card,
+html[data-theme="light"] .reward-card,
+html[data-theme="light"] .legal-page > section,
+html[data-theme="light"] .settings-list {
+  background: #f7eee5;
+  border-color: #e5d5c9;
+  color: #2d201b;
+}
+html[data-theme="light"] .settings-row b,
+html[data-theme="light"] .settings-page .settings-row b,
+html[data-theme="light"] .saved-card-persona b,
+html[data-theme="light"] .saved-card-text,
+html[data-theme="light"] .legal-page > section h2 {
+  color: #291c18;
+}
+html[data-theme="light"] .settings-row small,
+html[data-theme="light"] .settings-page .settings-row small,
+html[data-theme="light"] .legal-page > section p,
+html[data-theme="light"] .persona-detail .description,
+html[data-theme="light"] .sample-card p {
+  color: #72584f;
+}
+html[data-theme="light"] .settings-page .settings-panel .settings-row {
+  background: transparent;
+}
+html[data-theme="light"]
+  .settings-page
+  .settings-panel
+  .settings-row
+  + .settings-row,
+html[data-theme="light"] .settings-list .settings-row + .settings-row,
+html[data-theme="light"] .saved-card-bottom {
+  border-color: #e7d8cd;
+}
+html[data-theme="light"] .settings-page .settings-row > svg:first-child {
+  color: #894c40;
+  background: #efdfd2;
+}
+html[data-theme="light"] .settings-page .settings-row .settings-status {
+  background: #f0e1d4;
+  border-color: #e2cdbf;
+  color: #704b40;
+}
+html[data-theme="light"] .settings-page .settings-group > h3,
+html[data-theme="light"] .settings-group > h3,
+html[data-theme="light"] .control-label {
+  color: #705148;
+}
+html[data-theme="light"] .settings-page .settings-group > .controls,
+html[data-theme="light"] .settings-group > .controls {
+  background: #f7eee5;
+  border-color: #e5d5c9;
+}
+html[data-theme="light"] .level-option {
+  background: #fff8f0;
+  border-color: #e4d3c5;
+}
+html[data-theme="light"] .level-option b {
+  color: #583a32;
+}
+html[data-theme="light"] .level-option.selected {
+  background: #f5dfd2;
+  border-color: #b55b3f;
+}
+html[data-theme="light"] .level-option.selected b {
+  color: #8e2a20;
+}
+html[data-theme="light"] .chaos-note,
+html[data-theme="light"] .range-labels,
+html[data-theme="light"] .chaos-label > b {
+  color: #795a50;
+}
+html[data-theme="light"] .controls input[type="range"] {
+  background: linear-gradient(
+    90deg,
+    #ab4a30 var(--range),
+    #dfd0c5 var(--range)
+  );
+}
+html[data-theme="light"] .saved-card-prompt {
+  color: #806359;
+  border-color: #b67053;
+}
+html[data-theme="light"] .saved-filter-chip {
+  background: #f5e9dc;
+  color: #755247;
+  border-color: #e5d1c2;
+}
+html[data-theme="light"] .saved-filter-chip.active {
+  background: #f0d8c9;
+  color: #8f3627;
+  border-color: #c79076;
+}
+html[data-theme="light"] .profile-card p,
+html[data-theme="light"] .profile-stats > :is(a, button) > span {
+  color: #73584e;
+}
+html[data-theme="light"] .profile-card h2,
+html[data-theme="light"] .profile-stats > :is(a, button) > b {
+  color: #2d201a;
+}
+html[data-theme="light"] .profile-badge {
+  color: #86392b;
+  background: #f4dfd1;
+  border-color: #e7cab8;
+}
+html[data-theme="light"] .profile-stats > :is(a, button),
+html[data-theme="light"] .link-account-banner {
+  background: #f7eee5;
+  border-color: #e5d5c9;
+  color: #40271f;
+}
+html[data-theme="light"] .profile-stats > :is(a, button) > svg:first-child {
+  color: #a84f32;
+}
+html[data-theme="light"] .subscription-status h2 {
+  color: #33241e;
+}
+html[data-theme="light"] .upload-zone {
+  background: #f7eee5;
+  border-color: #c9aa98;
+  color: #53382e;
+}
+html[data-theme="light"] .premium-page .premium-crown {
+  background: #f2e1d0;
+  border-color: #dec1a7;
+  color: #9c572d;
+}
+html[data-theme="light"] .premium-page .premium-intro h1 em {
+  color: #a2412e;
+}
+html[data-theme="light"] .premium-benefits {
+  background: #f2e5d9;
+  border-color: #dfc6b4;
+}
+html[data-theme="light"] .premium-benefits > div {
+  color: #4d342b;
+}
+html[data-theme="light"] .premium-benefits svg {
+  color: #a35134;
+}
+html[data-theme="light"] .premium-free-summary,
+html[data-theme="light"] .premium-page .paywall-note,
+html[data-theme="light"] .premium-page .paywall-links > * {
+  color: #70584e;
+}
+html[data-theme="light"] .premium-page .plan-option {
+  background: #fff9f1;
+  border-color: #e0ccbd;
+  color: #3a2820;
+}
+html[data-theme="light"] .premium-page .plan-option.selected {
+  background: #f6e5d9;
+  border-color: #b66b48;
+}
+html[data-theme="light"] .premium-page .plan-option b small,
+html[data-theme="light"] .premium-page .plan-option > span > small {
+  color: #735347;
+}
+html[data-theme="light"] .battle-record-banner {
+  background: #f4e7d8;
+  border-color: #e4ceba;
+}
+html[data-theme="light"] .battle-record-pill {
+  color: #3d2b21;
+}
+html[data-theme="light"] .battle-record-rate span {
+  background: #ead6ba;
+  border-color: #d9bf9e;
+  color: #6e4824;
+}
+html[data-theme="light"] .battle-section-label {
+  color: #745950;
+}
+html[data-theme="light"] .battle-difficulty-card,
+html[data-theme="light"] .battle-opponent-card {
+  background: #f7eee5;
+  border-color: #e4d5c9;
+}
+html[data-theme="light"] .battle-difficulty-card b,
+html[data-theme="light"] .battle-opponent-info b {
+  color: #33221b;
+}
+html[data-theme="light"] .battle-difficulty-card small,
+html[data-theme="light"] .battle-opponent-info small {
+  color: #795e54;
+}
+html[data-theme="light"] .battle-difficulty-card.active,
+html[data-theme="light"] .battle-opponent-card.selected {
+  background: #f6e0d3;
+  border-color: #b8684b;
+}
+html[data-theme="light"] .battle-difficulty-card.active b {
+  color: #963c27;
+}
+html[data-theme="light"] .battle-topic-input {
+  background: #fffaf4;
+  border-color: #ddcabc;
+  color: #33221b;
+}
+html[data-theme="light"] .battle-topic-active,
+html[data-theme="light"] .battle-arena-header,
+html[data-theme="light"] .battle-round-card,
+html[data-theme="light"] .battle-current-turn-card,
+html[data-theme="light"] .battle-judge-box {
+  background: #f7eee5;
+  border-color: #e2cfc1;
+  color: #3d2a22;
+}
+html[data-theme="light"] .battle-topic-active b,
+html[data-theme="light"] .battle-fighter-badge b,
+html[data-theme="light"] .battle-line-body p {
+  color: #33221b;
+}
+html[data-theme="light"] .battle-starter-chip {
+  background: #f3e6d9;
+  border-color: #e0cbb9;
+  color: #704a3c;
+}
+html[data-theme="light"] .battle-fire-btn {
+  background: #981f2c;
+  color: #fff;
+}
+html[data-theme="light"] .entry-card,
+html[data-theme="light"] .modal {
+  background: #fff9f2;
+  border-color: #e4d1c3;
+  color: #291c18;
+}
+html[data-theme="light"] .entry-card h1,
+html[data-theme="light"] .modal-head h2 {
+  color: #291c18;
+}
+html[data-theme="light"] .entry-card > p,
+html[data-theme="light"] .onboard-features > span,
+html[data-theme="light"] .signin-perks > span {
+  color: #73584e;
+}
+html[data-theme="light"] .credit-modal-balance,
+html[data-theme="light"] .credit-modal-option.premium-option {
+  background: #f4e3d5;
+  border-color: #dfc4b1;
+}
+html[data-theme="light"] .credit-modal-option {
+  background: #f7eee5;
+  border-color: #e4d3c5;
+  color: #3a2922;
+}
+html[data-theme="light"] .credit-modal-icon,
+html[data-theme="light"] .credit-option-icon {
+  background: #edd7c5;
+  color: #9c482d;
+}
+html[data-theme="light"] .credit-modal-balance strong,
+html[data-theme="light"] .out-of-credits-body h3 {
+  color: #291c18;
+}
+html[data-theme="light"] .credit-modal-balance small,
+html[data-theme="light"] .credit-modal-option small,
+html[data-theme="light"] .credit-modal > p,
+html[data-theme="light"] .credit-modal-reset,
+html[data-theme="light"] .credit-modal-later {
+  color: #755950;
+}
+html[data-theme="light"] .report-reasons label {
+  background: #f7eee5;
+  border-color: #e3d2c5;
+  color: #3c2b24;
+}
+html[data-theme="light"] .icon-button {
+  color: #79574c;
+}

@@ -1,0 +1,9 @@
+# Persona artwork
+
+Created with the built-in image generation tool. The app uses `public/personas.webp` (1536×1024, about 307 KB), a compressed copy of the generated PNG. The six equal square cells are displayed through CSS background positioning. Full source: `design/personas-source.png`.
+
+Final prompt:
+
+> Use case: stylized-concept. Create ONE game UI portrait sprite atlas for Roast Me AI, an entertainment roasting app. Exact layout: 3 columns by 2 rows, SIX equal square panels, no gaps, total landscape image ratio 3:2. Every panel has a nearly black background and a centered high quality glossy 3D cartoon bust, dramatic neon rim light, consistent scale. Top left: mischievous smiling orange-yellow FLAME character wearing oversized black sunglasses, fiery sparks, hands making thumbs up. Top middle: sweet elderly grandma white curly hair, round purple eyeglasses, lavender cardigan, mischievous raised eyebrow. Top right: handsome smug CEO black suit and black sunglasses, arms crossed, orange rim lighting. Bottom left: unimpressed orange and white cat wearing black sunglasses, purple rim light. Bottom middle: friendly spherical purple futuristic robot with LED sunglasses blue glowing eyes. Bottom right: fabulous pink-haired drama queen with little gold crown and theatrical expression, magenta rim light. Each character fills its own square but stays fully within its panel. Dark luxurious black backgrounds, bright saturated orange and violet lighting, detailed rendered cartoon artwork, bold readable silhouettes. No text, no logos, no borders, no watermarks. This single atlas will be cropped by CSS into portrait cards.
+
+App identity: the Savage cell is reused as public/logo.png, browser/PWA icons, Android launcher density assets, and the Android splash mascot. Regenerate these image resources with node scripts/brand-assets.mjs; this does not package Android.

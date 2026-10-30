@@ -1,0 +1,329 @@
+.native-app {
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+html.native-app,
+html.native-app body {
+  height: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: pan-y;
+  position: relative !important;
+  width: 100% !important;
+}
+.native-app #root {
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  position: relative !important;
+}
+.native-app .topbar {
+  height: calc(56px + var(--safe-top));
+  padding-top: var(--safe-top);
+}
+.native-app .mobile-nav {
+  height: calc(56px + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  position: relative !important;
+  flex-shrink: 0 !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  z-index: 30;
+}
+.native-app .app-layout {
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  padding-bottom: 0 !important;
+}
+.native-app .chat-screen-layout {
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  padding-bottom: 0 !important;
+}
+.native-app .entry-layout {
+  padding-top: calc(20px + var(--safe-top));
+  padding-bottom: calc(20px + var(--safe-bottom));
+  overflow-y: auto;
+}
+.native-app .toast {
+  bottom: calc(82px + var(--safe-bottom));
+}
+.native-app .btn {
+  min-height: 44px;
+}
+.native-app .icon-button {
+  min-height: 38px;
+  min-width: 38px;
+}
+.native-app input,
+.native-app textarea,
+.native-app select {
+  font-size: 15px !important;
+}
+.native-app .roast-actions > button,
+.native-app .roast-actions > a {
+  min-height: 40px;
+  min-width: 36px;
+}
+.native-app .roast-actions {
+  flex-wrap: wrap;
+}
+.native-app .persona-info > p {
+  font-size: 11px;
+  min-height: 34px;
+}
+.native-app .persona-cta {
+  font-size: 12px;
+  min-height: 44px;
+}
+.native-app .persona-tags > span {
+  font-size: 8px;
+}
+
+/* Chat Layout & Scrolling Lock */
+.native-app .workspace {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+}
+.native-app .page-grid {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.native-app .page-content {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+.native-app .screen-root {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+.native-app .insta-chat-screen {
+  height: 100% !important;
+  max-height: 100% !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.native-app .insta-header {
+  padding-top: calc(10px + var(--safe-top)) !important;
+  padding-bottom: 10px !important;
+  flex-shrink: 0 !important;
+}
+.native-app .insta-chat-viewport {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding: 12px 14px 8px !important;
+}
+.native-app .insta-composer-footer {
+  flex-shrink: 0 !important;
+  padding: 4px 8px 5px !important;
+  background: rgba(18, 15, 25, 0.98) !important;
+}
+.native-app .insta-input-container {
+  min-height: 34px !important;
+  padding: 5px 8px 5px 12px !important;
+}
+.native-app .insta-input-container textarea {
+  min-height: 20px !important;
+  height: 20px !important;
+  max-height: 72px !important;
+  font-size: 15px !important;
+  line-height: 20px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.native-app .insta-send-btn {
+  width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  padding: 0 !important;
+}
+.native-app .insta-media-btn {
+  width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+}
+.native-app .chat-screen-layout .topbar {
+  display: none !important;
+}
+
+/* Keyboard Open States */
+.native-app.keyboard-open .mobile-nav,
+.native-app body.keyboard-open .mobile-nav,
+body.keyboard-open .mobile-nav,
+.keyboard-open .mobile-nav {
+  display: none !important;
+}
+.native-app.keyboard-open .app-layout,
+.native-app body.keyboard-open .app-layout,
+body.keyboard-open .app-layout,
+.keyboard-open .app-layout {
+  padding-bottom: 0 !important;
+}
+.native-app.keyboard-open .insta-composer-footer,
+.native-app body.keyboard-open .insta-composer-footer,
+body.keyboard-open .insta-composer-footer,
+.keyboard-open .insta-composer-footer {
+  padding-bottom: 6px !important;
+}
+.native-app.keyboard-open .toast,
+.native-app body.keyboard-open .toast,
+body.keyboard-open .toast,
+.keyboard-open .toast {
+  bottom: 12px !important;
+}
+
+.native-app .desktop-footer {
+  display: none;
+}
+.native-app .offline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: #452f1c;
+  color: #ffe1aa;
+  text-align: center;
+  padding: 9px 15px;
+  font-size: 12px;
+}
+.native-app .entry-card,
+.native-app .modal {
+  box-shadow: none;
+}
+@media (min-width: 641px) {
+  .native-app .sidebar {
+    display: none;
+  }
+  .native-app .workspace {
+    width: 100%;
+    margin-left: 0;
+  }
+  .native-app .with-rail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .native-app .right-rail {
+    display: none;
+  }
+  .native-app .breadcrumb {
+    display: none;
+  }
+  .native-app .mobile-brand {
+    display: flex;
+  }
+  .native-app .mobile-nav {
+    display: flex;
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    flex-shrink: 0 !important;
+    z-index: 30;
+    justify-content: space-around;
+    background: #131019f5;
+    border-top: 1px solid #3a283a;
+  }
+  .native-app .mobile-nav > a {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    color: #a48caf;
+    font-size: 11px;
+  }
+  .native-app .mobile-nav > a.active {
+    color: #ffab77;
+  }
+  .native-app .mobile-nav > button.mobile-nav-btn {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    color: #a48caf;
+    font-size: 11px;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  .native-app .persona-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .native-app .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+}
+
+.native-app .screen-root {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+.native-app .battle-page-container,
+.native-app .saved-page {
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  padding: 14px 16px 90px !important;
+}
+
+.native-app .insta-assistant-bubble {
+  background: linear-gradient(145deg, #261f30, #1d1826);
+  border: 1px solid #3b3046;
+}
+
+.native-app .insta-assistant-bubble p {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
