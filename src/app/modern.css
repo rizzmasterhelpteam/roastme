@@ -1283,3 +1283,42 @@ html:not([data-theme="light"]) .credit-modal-icon,
 html:not([data-theme="light"]) .credit-option-icon {
   color: #ffcf70;
 }
+
+.account-settings-page .profile-card {
+  padding: 12px;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+.account-settings-page .profile-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+.account-settings-page .profile-card h2 {
+  font-size: 17px;
+}
+.account-settings-page .profile-stats {
+  margin: 12px 0;
+}
+.account-settings-page .settings-list {
+  margin-bottom: 20px;
+}
+.account-settings-page .link-account-banner {
+  padding: 12px;
+  margin: 10px 0;
+}
+.account-preferences {
+  min-width: 0;
+}
+
+.account-roast-controls > summary {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+.account-roast-controls[open] > summary {
+  margin-bottom: 10px;
+}

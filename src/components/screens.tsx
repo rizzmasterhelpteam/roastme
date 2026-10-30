@@ -3583,8 +3583,9 @@ function Profile() {
   const { state, signout } = useApp();
   const { busy, run } = useAction();
   return (
-    <div className="screen-narrow">
-      <Heading title="Your account" icon={<UserRound />} />
+    <div className="screen-narrow settings-page account-settings-page">
+      <Back label="Back to roast room" />
+      <Heading title="Account & settings" icon={<UserRound />} />
       <div className="profile-card">
         <Portrait className="profile-avatar" />
         <div>
@@ -3642,19 +3643,8 @@ function Profile() {
           title="Account & subscription"
           desc="Plans, purchases, and billing help"
         />
-        <Row
-          href="/settings"
-          icon={<SettingsIcon />}
-          title="Settings"
-          desc="Make the app feel like you"
-        />
-        <Row
-          href="/about"
-          icon={<CircleHelp />}
-          title="Help & about"
-          desc="The important, slightly less funny stuff"
-        />
       </div>
+      <Settings embedded />
       <Button
         variant="outline"
         className="wide"
@@ -3704,7 +3694,7 @@ function Row({
     </button>
   );
 }
-function Settings() {
+function Settings({ embedded = false }: { embedded?: boolean }) {
   const { state, api, toast } = useApp();
   const { busy, run } = useAction();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -3724,17 +3714,25 @@ function Settings() {
       window.removeEventListener("roast:notifications-changed", refresh);
   }, []);
   return (
-    <div className="screen-narrow settings-page">
-      <Back label="Back to roast room" />
-      <Heading
-        title="Settings"
-        description="Your roast, your rules. Make it feel like you."
-        icon={<SettingsIcon />}
-      />
-      <div className="settings-group">
-        <h3>Roast controls</h3>
+    <div
+      className={
+        embedded ? "account-preferences" : "screen-narrow settings-page"
+      }
+    >
+      {!embedded && (
+        <>
+          <Back label="Back to roast room" />
+          <Heading
+            title="Settings"
+            description="Your roast, your rules. Make it feel like you."
+            icon={<SettingsIcon />}
+          />
+        </>
+      )}
+      <details className="settings-group account-roast-controls">
+        <summary>Roast controls</summary>
         <Controls compact />
-      </div>
+      </details>
       <div className="settings-group">
         <h3>App preferences</h3>
         <div className="settings-panel">
@@ -3920,6 +3918,7 @@ function Subscription() {
         Subscription checkout is not connected yet. You cannot be charged in
         this version.
       </p>
+      <Settings embedded />
       <Button
         variant="outline"
         className="wide"
@@ -4203,7 +4202,7 @@ export function AppScreen({ segments }: { segments: string[] }) {
       content = <Profile />;
       break;
     case "settings":
-      content = <Settings />;
+      content = <Profile />;
       break;
     case "subscription":
       content = <Subscription />;

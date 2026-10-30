@@ -235,3 +235,12 @@ begin
  update public.profiles set credits_balance=credits_balance+5 where id=p_user;
  insert into public.credit_transactions(user_id,type,amount,reference) values(p_user,'ad_reward',5,'ad:'||p_event);
 end; $$;
+
+-- Supporting indexes for owner lookups and cascading account deletion.
+create index if not exists image_uploads_owner on public.image_uploads(user_id);
+create index if not exists messages_session on public.messages(session_id);
+create index if not exists reports_message on public.reports(message_id);
+create index if not exists reports_owner on public.reports(user_id);
+create index if not exists sessions_persona on public.roast_sessions(persona_id);
+create index if not exists saved_message on public.saved_roasts(message_id);
+create index if not exists subscriptions_owner on public.subscriptions(user_id);

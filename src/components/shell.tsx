@@ -104,7 +104,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
         <div className="sidebar-bottom">
           <Link className="nav-link" href="/settings">
-            <Settings size={19} /> Settings
+            <Settings size={19} /> Account & settings
           </Link>
           <Link className="nav-link" href="/about">
             <CircleHelp size={19} /> Help & about
@@ -164,7 +164,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
             </div>
           </header>
         )}
-        <div className={`page-grid ${path === "/" && !isChat ? "with-rail" : ""}`}>
+        <div
+          className={`page-grid ${path === "/" && !isChat ? "with-rail" : ""}`}
+        >
           <main className="page-content">{children}</main>
           {path === "/" && !isChat && (
             <aside className="right-rail">
@@ -228,7 +230,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <Heart
               size={20}
               fill={path === "/saved" || savedCount > 0 ? "#f43f5e" : "none"}
-              color={path === "/saved" || savedCount > 0 ? "#f43f5e" : "currentColor"}
+              color={
+                path === "/saved" || savedCount > 0 ? "#f43f5e" : "currentColor"
+              }
             />
             {savedCount > 0 && <span className="mobile-saved-dot" />}
           </span>
@@ -237,9 +241,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </nav>
 
       {/* Global Out of Credits Modal */}
-      {creditsOpen && (
-        <OutOfCredits close={() => setCreditsOpen(false)} />
-      )}
+      {creditsOpen && <OutOfCredits close={() => setCreditsOpen(false)} />}
     </div>
   );
 }
