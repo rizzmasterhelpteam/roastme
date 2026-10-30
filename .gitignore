@@ -1,0 +1,32 @@
+node_modules/
+.next/
+.env*
+!.env.example
+*.tsbuildinfo
+test-results/
+playwright-report/
+work/
+dist-native/
+android/.gradle/
+android/.idea/
+android/local.properties
+android/**/build/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+*.jks
+*.keystore
+
+# Local editor state, debugging scratch files and CLI caches
+.idea/
+scratch/
+supabase/.temp/
+*.log
+*.apk
+*.aab
+
+# Signing credentials and private keys
+keystore.properties
+key.properties
+*.pem
+*.p12
