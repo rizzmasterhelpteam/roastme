@@ -76,7 +76,8 @@ export async function generate(
   await moderate(input.prompt);
   let content: string;
   if (input.type === "image") {
-    if (!process.env.GOOGLE_API_KEY)
+    const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+    if (!geminiKey)
       throw new Error("Image roasting is not configured yet.");
     const image = imageType(input.image || "");
     const res = await fetch(
@@ -84,7 +85,7 @@ export async function generate(
       {
         method: "POST",
         headers: {
-          "x-goog-api-key": process.env.GOOGLE_API_KEY,
+          "x-goog-api-key": geminiKey,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
