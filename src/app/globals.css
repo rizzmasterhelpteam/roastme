@@ -1072,9 +1072,11 @@ small {
   font-size: 8px;
 }
 .chaos-label {
-  margin-top: 25px;
+  margin-top: 0;
+  flex-wrap: wrap;
   margin-bottom: 13px;
 }
+.chaos-label > span { order: 3; flex-basis: 100%; margin-left: 0; }
 .chaos-label > b {
   margin-left: auto;
   font-size: 11px;
@@ -3097,6 +3099,27 @@ small {
   line-height: 1.9;
   color: #ac91bb;
 }
+.signin-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 18px 0;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  cursor: pointer;
+}
+.signin-consent input[type="checkbox"] {
+  appearance: auto;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  margin-top: 2px;
+  padding: 0;
+  accent-color: #a86bfa;
+}
+.signin-consent a { color: var(--text); text-decoration: underline; }
 .modal {
   position: fixed;
   inset: 0;

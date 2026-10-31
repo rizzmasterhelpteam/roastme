@@ -217,17 +217,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
         )}
       </div>
       <nav className="mobile-nav">
-        <Link href="/" className={path === "/" ? "active" : ""}>
+        <Link
+          href="/"
+          className={path === "/" || path.startsWith("/chat") ? "active" : ""}
+        >
           <Flame size={20} />
           <span>Roast</span>
         </Link>
-        <Link href="/battle" className={path === "/battle" ? "active" : ""}>
+        <Link
+          href="/battle"
+          className={path.startsWith("/battle") ? "active" : ""}
+        >
           <Swords size={20} />
           <span>Battle</span>
         </Link>
         <Link
           href="/settings"
-          className={path === "/settings" || path === "/profile" ? "active" : ""}
+          className={
+            path === "/settings" || path === "/profile" ? "active" : ""
+          }
         >
           <Settings size={20} />
           <span>Settings</span>

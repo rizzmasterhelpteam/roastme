@@ -5,7 +5,7 @@ import {
   type AppState,
   type Roast,
 } from "@/lib/personas";
-import { generationSchema, isUnsafe, reportReasons } from "@/lib/validation";
+import { generationSchema, reportReasons } from "@/lib/validation";
 type RecordState = { state: AppState; claimed: string; reports: unknown[] };
 const key = "roast-native-demo-v1";
 let queue = Promise.resolve();
@@ -41,12 +41,6 @@ async function perform(path: string, body?: Record<string, unknown>) {
     const existing = record.state.history.find((r) => r.id === input.requestId);
     if (existing)
       return { status: 200, data: { roast: existing, state: record.state } };
-    if (isUnsafe(input.prompt))
-      return fail(
-        "Let’s keep it playful. Try a self-roast or harmless habit.",
-        422,
-        true,
-      );
     const cost = input.type === "image" ? 2 : 1;
     if (record.state.credits < cost) return fail("OUT_OF_CREDITS", 402);
     if (

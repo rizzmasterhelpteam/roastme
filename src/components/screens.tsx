@@ -511,7 +511,11 @@ function InstaChatScreen({
         (r.type === "chat" || r.type === "image" || !r.type) &&
         r.session_id,
     )?.session_id;
-    setSessionId(latestSession || crypto.randomUUID());
+    let stored: string | null = null;
+    try {
+      stored = sessionStorage.getItem(`roast-session:${selected}`);
+    } catch {}
+    setSessionId(stored || latestSession || crypto.randomUUID());
   }, [ready, selected]);
 
   const activeSessionId =
@@ -556,7 +560,13 @@ function InstaChatScreen({
 
   function startNewChat() {
     setNewChatConfirmOpen(false);
-    setSessionId(crypto.randomUUID());
+    const nextSession = crypto.randomUUID();
+    try {
+      sessionStorage.setItem(`roast-session:${selected}`, nextSession);
+    } catch {}
+    setSessionId(nextSession);
+    setBlocked(false);
+    setLikedMap({});
     setPrompt("");
     setAttachedImage("");
     setAttachedFileName("");
@@ -1604,9 +1614,7 @@ function ComposerScreen({
             onClick={() => setControlOpen(true)}
           >
             <SettingsIcon size={15} />
-            <span>
-              Chaos {chaos}%
-            </span>
+            <span>Chaos {chaos}%</span>
           </button>
         </div>
       ) : (
@@ -3554,13 +3562,10 @@ function SignIn({ link = false }: { link?: boolean }) {
   const router = useRouter();
   const [email, setEmail] = useState(""),
     [emailOpen, setEmailOpen] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const { run, busy } = useAction();
   return (
     <div className="entry-card signin-card">
-      <Link href="/" className="skip-link">
-        Explore the app
-        <ArrowRight size={14} />
-      </Link>
       <Portrait className="onboard-mascot" />
       <div className="entry-brand">
         ROAST ME <em>AI</em>
@@ -3571,16 +3576,39 @@ function SignIn({ link = false }: { link?: boolean }) {
           ? "Link your guest account to keep your credits, settings, and roast history."
           : "Pick a persona. Get roasted. Take nothing personally."}
       </p>
+      <label className="signin-consent">
+        <input
+          type="checkbox"
+          checked={acceptedTerms}
+          onChange={(e) => setAcceptedTerms(e.target.checked)}
+          required
+        />
+        <span>
+          I agree to the{" "}
+          <Link href="/terms" target="_blank" rel="noopener noreferrer">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" target="_blank" rel="noopener noreferrer">
+            Privacy Policy
+          </Link>
+          .
+        </span>
+      </label>
       <div className="stack auth-buttons">
         <Button
           className="google-button"
-          disabled={busy}
-          onClick={() => void run(() => auth("google"))}
+          disabled={busy || !acceptedTerms}
+          onClick={() => void run(() => auth(link ? "google-link" : "google"))}
         >
           <span className="google-g">G</span>
           {link ? "Link with Google" : "Continue with Google"}
         </Button>
-        <Button variant="outline" onClick={() => setEmailOpen(!emailOpen)}>
+        <Button
+          variant="outline"
+          disabled={busy || !acceptedTerms}
+          onClick={() => setEmailOpen(!emailOpen)}
+        >
           <Mail size={20} />
           Continue with email
         </Button>
@@ -3588,6 +3616,7 @@ function SignIn({ link = false }: { link?: boolean }) {
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              if (!acceptedTerms) return;
               void run(() => auth("email", email));
             }}
           >
@@ -3596,13 +3625,15 @@ function SignIn({ link = false }: { link?: boolean }) {
             </label>
             <input
               type="email"
+              autoComplete="email"
+              inputMode="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
             />
-            <Button className="wide" disabled={busy}>
+            <Button className="wide" disabled={busy || !acceptedTerms}>
               Send secure sign-in link
               <ArrowRight size={17} />
             </Button>
@@ -3610,7 +3641,7 @@ function SignIn({ link = false }: { link?: boolean }) {
         )}
         <Button
           variant="outline"
-          disabled={busy}
+          disabled={busy || !acceptedTerms}
           onClick={() =>
             void run(async () => {
               await auth("guest");
@@ -4252,9 +4283,31 @@ function AuthCallback() {
   const { reload, toast } = useApp();
   const router = useRouter();
   useEffect(() => {
-    void reload()
-      .then(() => router.replace("/"))
-      .catch((e) => toast(e.message));
+    let alive = true;
+    void (async () => {
+      const { browserSupabase } = await import("@/lib/supabase");
+      const sb = browserSupabase();
+      const params = new URLSearchParams(window.location.search);
+      const hash = new URLSearchParams(window.location.hash.slice(1));
+      if (params.has("error") || hash.has("error"))
+        throw new Error(
+          "Sign-in was cancelled or could not be completed. Please try again.",
+        );
+      if (!sb) throw new Error("Sign-in is not configured.");
+      const { data, error } = await sb.auth.getSession();
+      if (error) throw error;
+      if (!data.session)
+        throw new Error(
+          "No sign-in session was received. Please request a new link.",
+        );
+      await reload();
+      if (alive) router.replace("/");
+    })().catch((e) => {
+      if (alive) toast(e.message);
+    });
+    return () => {
+      alive = false;
+    };
   }, [reload, router, toast]);
   return (
     <div className="empty-state">
@@ -4287,9 +4340,13 @@ export function AppScreen({ segments }: { segments: string[] }) {
       content = <SavedPage />;
       break;
     case "image":
+      content = <ComposerScreen mode="image" />;
+      break;
     case "history":
+      content = <History />;
+      break;
     case "rewards":
-      content = <Home />;
+      content = <Rewards />;
       break;
     case "premium":
       content = <Premium />;

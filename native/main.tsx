@@ -128,7 +128,13 @@ function NativeApp() {
 
     const onFocusIn = (e: FocusEvent) => {
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
-      if (tag === "input" || tag === "textarea") {
+      if (
+        tag === "textarea" ||
+        (tag === "input" &&
+          !["range", "checkbox", "radio", "file", "button", "submit"].includes(
+            (e.target as HTMLInputElement).type,
+          ))
+      ) {
         onKeyboardShow();
       }
     };

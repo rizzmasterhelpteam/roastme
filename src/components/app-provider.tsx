@@ -6,11 +6,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import {
-  defaultState,
-  levelFromChaos,
-  type AppState,
-} from "@/lib/personas";
+import { defaultState, levelFromChaos, type AppState } from "@/lib/personas";
 import { browserSupabase } from "@/lib/supabase";
 import { isNative, authRedirect } from "@/lib/native/platform";
 type ApiBody = Record<string, unknown>;
@@ -47,7 +43,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [level, setLevel] = useState("Spicy"),
     [chaos, setChaosState] = useState(50);
   const setChaos = useCallback((value: number) => {
-    const next = Math.max(0, Math.min(100, Math.round(value)));
+    const next = Number.isFinite(value)
+      ? Math.max(0, Math.min(100, Math.round(value)))
+      : 50;
     setChaosState(next);
     setLevel(levelFromChaos(next));
   }, []);
@@ -184,8 +182,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
   }, [reload, toast]);
   useEffect(() => {
-    if (ready)
-      localStorage.setItem("roast-controls", JSON.stringify({ level, chaos }));
+    if (ready) {
+      try {
+        localStorage.setItem(
+          "roast-controls",
+          JSON.stringify({ level, chaos }),
+        );
+      } catch {}
+    }
   }, [level, chaos, ready]);
   useEffect(() => {
     if (!notice) return;
@@ -212,22 +216,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await reload();
       return;
     }
-    if (method === "google") {
-      const result = user?.is_anonymous
-        ? await sb.auth.linkIdentity({
-            provider: "google",
-            options: {
-              redirectTo: authRedirect(),
-              skipBrowserRedirect: isNative(),
-            },
-          })
-        : await sb.auth.signInWithOAuth({
-            provider: "google",
-            options: {
-              redirectTo: authRedirect(),
-              skipBrowserRedirect: isNative(),
-            },
-          });
+    if (method === "google" || method === "google-link") {
+      const result =
+        method === "google-link" && user?.is_anonymous
+          ? await sb.auth.linkIdentity({
+              provider: "google",
+              options: {
+                redirectTo: authRedirect(),
+                skipBrowserRedirect: isNative(),
+              },
+            })
+          : await sb.auth.signInWithOAuth({
+              provider: "google",
+              options: {
+                redirectTo: authRedirect(),
+                skipBrowserRedirect: isNative(),
+              },
+            });
       if (result.error) throw result.error;
       if (isNative() && result.data.url) {
         const { Browser } = await import("@capacitor/browser");
