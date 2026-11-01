@@ -25,17 +25,14 @@ export const reportReasons = [
 // This is an output guard. User wording is roast material, so profanity,
 // slang, insults, and quoted slurs are not blocked before generation.
 const highRiskPatterns = [
-  /\b(?:kill|hurt|harm)\s+(?:myself|yourself|himself|herself|themself|someone|somebody)\b/i,
-  /\b(?:suicide|suicidal|self[- ]harm)\b/i,
+  /\b(?:you should|you must|go|please)\s+(?:kill|hurt|harm)\s+yourself\b/i,
+  /\b(?:encourage|promote)\s+(?:suicide|self[- ]harm)\b/i,
   /\b(?:csam|child\s*(?:porn|sexual\s*(?:abuse|exploitation))|sexual(?:ly)?\s+exploit(?:ing)?\s+(?:a\s+)?minor)\b/i,
   /\b(?:how|ways?|instructions?|guide|steps?|help(?:\s+me)?)\b.{0,80}\b(?:make|build|buy|detonate)\b.{0,50}\b(?:bomb|explosive|weapon)\b/i,
 ];
 
 export function isUnsafe(text: string) {
-  return (
-    highRiskPatterns.some((pattern) => pattern.test(text)) ||
-    isPersonaEscapeAttempt(text)
-  );
+  return highRiskPatterns.some((pattern) => pattern.test(text));
 }
 export function imageType(data: string) {
   const m = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/.exec(
@@ -80,7 +77,7 @@ export function isPersonaEscapeAttempt(text: string) {
 export function isImplementationResponse(text: string) {
   return [
     /\b(?:as an ai|as a language model|i am an ai|i'm an ai|large language model)\b/i,
-    /\b(?:my|the|this)\s+(?:model|api|system prompt|developer prompt|hidden instructions)\b/i,
+    /\b(?:my|the|this)\s+(?:system prompt|developer prompt|hidden instructions)\b/i,
     /\b(?:api key|system prompt|developer message|prompt injection|developer mode)\b/i,
     /\b(?:groq|gemini|openai)\s+(?:model|api|endpoint|key)\b/i,
   ].some((pattern) => pattern.test(text));

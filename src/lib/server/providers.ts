@@ -4,7 +4,6 @@ import { findPersona, levelFromChaos } from "@/lib/personas";
 import {
   imageType,
   isImplementationResponse,
-  isPersonaEscapeAttempt,
   isUnsafe,
   generationSchema,
 } from "@/lib/validation";
@@ -99,7 +98,7 @@ export async function moderate(
   // bait before generation. The model gets the full message and the output
   // guard below decides what is allowed to leave the app.
   if (mode === "input") return;
-  if (isUnsafe(text) || isPersonaEscapeAttempt(text)) throw new SafetyError();
+  if (isUnsafe(text)) throw new SafetyError();
   const response = await openai(
     [
       {
@@ -242,7 +241,7 @@ export async function generate(
     );
   }
   if (!content.trim()) throw new Error("No roast came back. Please try again.");
-  if (/REFUSED/i.test(content) || isImplementationResponse(content))
+  if (/^REFUSED[.!\s]*$/i.test(content.trim()) || isImplementationResponse(content))
     throw new SafetyError();
   await moderate(content, "output");
   return content;
