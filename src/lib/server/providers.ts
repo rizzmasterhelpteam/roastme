@@ -1,4 +1,5 @@
 import "server-only";
+import { conversationGuidance } from "./conversation-guidance";
 import { findPersona, levelFromChaos } from "@/lib/personas";
 import {
   imageType,
@@ -93,7 +94,7 @@ export async function generate(
     : input.replyLength === "medium"
       ? "Reply with 2–3 short sentences, each on its own line."
       : "Reply with 2–4 sentences of a full developed roast, matching the usual output length.";
-  const replySystem = system + " Reply length requirement (takes precedence over earlier length guidance): " + lengthInstruction;
+  const replySystem = system + "\n\n" + conversationGuidance + "\n\nReply length requirement (takes precedence over earlier length guidance): " + lengthInstruction;
   await moderate(input.prompt, "input");
   let content: string;
   if (input.type === "image") {
