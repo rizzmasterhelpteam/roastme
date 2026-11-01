@@ -17,41 +17,45 @@ export class SafetyError extends Error {
   }
 }
 type Input = z.infer<typeof generationSchema>;
-async function groq(
+async function openai(
   messages: { role: string; content: string }[],
   json = false,
-  temperature = 0.8,
 ) {
-  if (!process.env.GROQ_API_KEY)
+  if (!process.env.OPENAI_API_KEY)
     throw new Error("Text roasting is not configured yet.");
   const response = await fetch(
-    "https://api.groq.com/openai/v1/chat/completions",
+    "https://api.openai.com/v1/chat/completions",
     {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
+        model: process.env.OPENAI_MODEL || "gpt-6-luna",
         messages,
-        temperature,
         max_completion_tokens: 2048,
-        ...((process.env.GROQ_MODEL || "openai/gpt-oss-120b").startsWith(
-          "openai/gpt-oss-",
-        )
-          ? { reasoning_effort: "low" }
-          : {}),
+        // Luna with reasoning enabled does not support temperature.
+        // Chaos remains controlled by the existing persona instructions.
+        reasoning_effort: "low",
+        store: false,
         ...(json ? { response_format: { type: "json_object" } } : {}),
       }),
       signal: AbortSignal.timeout(30000),
     },
   );
-  if (!response.ok)
+  if (!response.ok) {
+    console.error("Text provider request failed", {
+      status: response.status,
+      requestId: response.headers.get("x-request-id"),
+    });
     throw new Error(
       "The roast kitchen is busy. Please try again. No credits were used.",
     );
+  }
   const data = await response.json();
+  if (data.choices?.[0]?.finish_reason === "length")
+    throw new Error("The roast was cut short. Please try again. No credits were used.");
   const text = data.choices?.[0]?.message?.content;
   if (typeof text !== "string" || !text.trim())
     throw new Error("No roast came back. Please try again.");
@@ -67,7 +71,7 @@ export async function moderate(
   // guard below decides what is allowed to leave the app.
   if (mode === "input") return;
   if (isUnsafe(text) || isPersonaEscapeAttempt(text)) throw new SafetyError();
-  const response = await groq(
+  const response = await openai(
     [
       {
         role: "system",
@@ -77,7 +81,6 @@ export async function moderate(
       { role: "user", content: text },
     ],
     true,
-    0,
   );
   const result = JSON.parse(response);
   if (result.allowed !== true) throw new SafetyError();
@@ -164,7 +167,7 @@ export async function generate(
     )
       throw new Error("No usable photo description came back. Please retry.");
     await moderate(observation.description, "output");
-    content = await groq(
+    content = await openai(
       [
         {
           role: "system",
@@ -181,11 +184,10 @@ export async function generate(
         },
       ],
       false,
-      0.5 + input.chaos / 125,
     );
   } else if (input.type === "battle") {
     const other = findPersona(input.opponent || "cat");
-    content = await groq(
+    content = await openai(
       [
         {
           role: "system",
@@ -196,10 +198,9 @@ export async function generate(
         { role: "user", content: input.prompt },
       ],
       false,
-      0.9,
     );
   } else {
-    content = await groq(
+    content = await openai(
       [
         { role: "system", content: replySystem },
         ...context.slice(-6).flatMap((m) => [
@@ -209,7 +210,6 @@ export async function generate(
         { role: "user", content: input.prompt },
       ],
       false,
-      0.5 + input.chaos / 125,
     );
   }
   if (!content.trim()) throw new Error("No roast came back. Please try again.");

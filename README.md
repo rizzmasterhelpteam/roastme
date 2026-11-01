@@ -21,7 +21,7 @@ Open http://localhost:3000. With no Supabase configuration, development automati
 
 An identity that already belongs to another account cannot be silently merged. The app displays the auth provider's error and preserves the guest identity. A verified operator-assisted account merge is a separate workflow.
 
-Groq's OpenAI-compatible endpoint handles text and safety classification; Gemini's `generateContent` endpoint handles inline image input. Models are configurable via `GROQ_MODEL` and `GOOGLE_MODEL`. Images are restricted to JPG, PNG, or WebP, validated by content signature, and limited to 5 MB. Successful live photo roasts are stored in a private Supabase bucket and exposed through short-lived signed URLs.
+OpenAI's Chat Completions endpoint handles text and safety classification using `gpt-6-luna` with low reasoning; Gemini's `generateContent` endpoint handles inline image input. Set the server-only `OPENAI_API_KEY`; models are configurable via `OPENAI_MODEL` and `GOOGLE_MODEL`. Luna with low reasoning does not accept temperature, so chaos is controlled by the existing persona instructions. Images are restricted to JPG, PNG, or WebP, validated by content signature, and limited to 5 MB. Successful live photo roasts are stored in a private Supabase bucket and exposed through short-lived signed URLs.
 
 ## What works now
 
