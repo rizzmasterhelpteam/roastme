@@ -21,6 +21,7 @@ export class TextProviderError extends Error {}
 async function openai(
   messages: { role: string; content: string }[],
   json = false,
+  attempt = 0,
 ) {
   if (!process.env.OPENAI_API_KEY)
     throw new TextProviderError("Text roasting is not configured yet.");
@@ -48,6 +49,10 @@ async function openai(
   if (!response.ok) {
     const failure = await response.json().catch(() => null);
     const code = failure?.error?.code;
+    const errorType = failure?.error?.type;
+    const quotaFailure = [code, errorType].some(value =>
+      typeof value === "string" && /quota|billing|budget|credit.*exhaust/i.test(value)
+    ) || /exceeded your current quota|check your plan and billing|insufficient credits/i.test(failure?.error?.message || "");
     console.error("Text provider request failed", {
       status: response.status,
       code: typeof code === "string" ? code : undefined,
@@ -55,13 +60,20 @@ async function openai(
     });
     if (response.status === 401)
       throw new TextProviderError("The text service key could not be authenticated. Please contact support. No credits were used.");
-    if (code === "insufficient_quota")
-      throw new TextProviderError("The text service has reached its usage budget. Please try later. No credits were used.");
+    if (quotaFailure)
+      throw new TextProviderError("The text service has no available API quota. The app owner needs to check API billing and project limits. No credits were used.");
     if (response.status === 404 || code === "model_not_found")
       throw new TextProviderError("The configured text model is unavailable. Please contact support. No credits were used.");
     if (response.status === 403)
       throw new TextProviderError("The text service key does not have permission for this model. Please contact support. No credits were used.");
-    if (response.status === 429)
+    if (response.status === 429 && code === "rate_limit_exceeded" && attempt === 0) {
+      const retrySeconds = Number(response.headers.get("retry-after") || "2");
+      if (Number.isFinite(retrySeconds) && retrySeconds >= 0 && retrySeconds <= 5) {
+        await new Promise(resolve => setTimeout(resolve, Math.max(1000, retrySeconds * 1000)));
+        return openai(messages, json, attempt + 1);
+      }
+    }
+    if (response.status === 429 && code === "rate_limit_exceeded")
       throw new TextProviderError("The text service is receiving too many requests. Please try shortly. No credits were used.");
     const reference = typeof code === "string" && /^[a-z_]{1,64}$/.test(code)
       ? ` (${response.status}: ${code})`
