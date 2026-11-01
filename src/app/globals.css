@@ -338,7 +338,6 @@ small {
   width: 41px;
   height: 47px;
   border-radius: 11px;
-  background-size: 300% 200% !important;
 }
 .brand-ai {
   color: var(--orange);
