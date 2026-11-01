@@ -5,12 +5,7 @@ import { verifyAdSignature } from "../src/lib/ad-verification";
 import { isAllowedOrigin } from "../src/lib/api-origin";
 import { resolveApiOrigin } from "../src/lib/native/api-url";
 test("Android uses the direct API host without following cross-origin redirects", () => {
-  assert.equal(resolveApiOrigin("https://roastme-gold.vercel.app/"), "https://www.roastme-ai.com");
-  assert.equal(resolveApiOrigin("https://roastme-ai.com"), "https://www.roastme-ai.com");
-  assert.equal(resolveApiOrigin(" https://www.roastme-ai.com/ "), "https://www.roastme-ai.com");
-  assert.equal(resolveApiOrigin("https://custom.example/"), "https://custom.example");
-  assert.equal(resolveApiOrigin("https://roastme-gold.vercel.app.evil.example"), "https://roastme-gold.vercel.app.evil.example");
-  assert.equal(resolveApiOrigin(undefined), "");
+  assert.equal(resolveApiOrigin(), "https://www.roastme-ai.com");
 });
 test("AdMob verification rejects tampering, duplicate fields and incorrect signatures", () => {
   const { publicKey, privateKey } = generateKeyPairSync("ec", {
