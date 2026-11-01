@@ -17,12 +17,13 @@ export class SafetyError extends Error {
   }
 }
 type Input = z.infer<typeof generationSchema>;
+export class TextProviderError extends Error {}
 async function openai(
   messages: { role: string; content: string }[],
   json = false,
 ) {
   if (!process.env.OPENAI_API_KEY)
-    throw new Error("Text roasting is not configured yet.");
+    throw new TextProviderError("Text roasting is not configured yet.");
   const response = await fetch(
     "https://api.openai.com/v1/chat/completions",
     {
@@ -45,11 +46,20 @@ async function openai(
     },
   );
   if (!response.ok) {
+    const failure = await response.json().catch(() => null);
+    const code = failure?.error?.code;
     console.error("Text provider request failed", {
       status: response.status,
+      code: typeof code === "string" ? code : undefined,
       requestId: response.headers.get("x-request-id"),
     });
-    throw new Error(
+    if (response.status === 401)
+      throw new TextProviderError("The text service key could not be authenticated. Please contact support. No credits were used.");
+    if (code === "insufficient_quota")
+      throw new TextProviderError("The text service has reached its usage budget. Please try later. No credits were used.");
+    if (response.status === 404 || code === "model_not_found")
+      throw new TextProviderError("The configured text model is unavailable. Please contact support. No credits were used.");
+    throw new TextProviderError(
       "The roast kitchen is busy. Please try again. No credits were used.",
     );
   }
