@@ -1,5 +1,9 @@
 import { apiOrigin, SecureSession } from "./platform";
 import { nativeDemo } from "./demo";
+
+const GOOGLE_REWARDED_TEST_AD_UNIT =
+  "ca-app-pub-3940256099942544/5224354917";
+
 let configuredUser = "";
 async function purchases(userId: string) {
   const apiKey = process.env.NEXT_PUBLIC_REVENUECAT_ANDROID_KEY;
@@ -119,7 +123,7 @@ export async function nativeRequest(
     await AdMob.initialize();
     await AdMob.prepareRewardVideoAd({
       adId,
-      isTesting: false,
+      isTesting: adId === GOOGLE_REWARDED_TEST_AD_UNIT,
       ssv: { userId, customData: intent.data.intentId },
     });
     await AdMob.showRewardVideoAd();
