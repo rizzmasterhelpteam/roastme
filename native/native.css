@@ -17,7 +17,7 @@ html.native-app body {
   width: 100% !important;
 }
 .native-app #root {
-  height: 100% !important;
+  height: var(--app-viewport-height, 100%) !important;
   max-height: 100% !important;
   overflow: hidden !important;
   display: flex !important;
@@ -172,12 +172,44 @@ html.native-app body {
 }
 .native-app .insta-input-container textarea {
   min-height: 20px !important;
-  height: 20px !important;
+  height: auto;
   max-height: 72px !important;
   font-size: 15px !important;
   line-height: 20px !important;
   padding: 0 !important;
   margin: 0 !important;
+}
+
+/* Only the outer composer draws a border, including Android focus-visible. */
+html.native-app .insta-input-container textarea,
+html.native-app .insta-input-container textarea:focus,
+html.native-app .insta-input-container textarea:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  appearance: none;
+  min-width: 0;
+  overflow-y: auto;
+}
+html.native-app .insta-input-container:focus-within {
+  box-shadow: none !important;
+  border-color: var(--orange) !important;
+}
+.native-app .chat-screen-layout .screen-root {
+  overflow: hidden !important;
+  transform: none !important;
+}
+.native-app .insta-composer-bar { align-items: flex-end; }
+.native-app .insta-input-container { min-width: 0; }
+.native-app .insta-media-btn,
+.native-app .insta-send-btn {
+  width: 40px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  flex-shrink: 0;
 }
 .native-app .insta-send-btn {
   width: 32px !important;

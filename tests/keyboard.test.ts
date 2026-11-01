@@ -1,0 +1,41 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { transformSync } from "esbuild";
+
+test("Native IME visibility survives viewport resize races and cleans up", async () => {
+  const listeners = new Map<string, () => void>();
+  const keyboard = { addListener: async (name: string, callback: () => void) => {
+    listeners.set(name, callback);
+    return { remove: async () => { listeners.delete(name); } };
+  } };
+  const classes = new Set<string>();
+  const classList = { toggle: (name: string, on: boolean) => on ? classes.add(name) : classes.delete(name), remove: (name: string) => classes.delete(name) };
+  const properties = new Map<string, string>();
+  const viewport = Object.assign(new EventTarget(), { height: 800 });
+  const window = Object.assign(new EventTarget(), { innerHeight: 800, visualViewport: viewport });
+  const document = { documentElement: { classList, style: { setProperty: (k: string, v: string) => properties.set(k, v), removeProperty: (k: string) => properties.delete(k) } }, body: { classList }, activeElement: null };
+  let nextFrame: (() => void) | undefined;
+  const output = transformSync(readFileSync(new URL("../src/lib/native/keyboard.ts", import.meta.url), "utf8"), { loader: "ts", format: "cjs", target: "es2022" }).code;
+  const exports: { trackKeyboardViewport?: () => () => void } = {};
+  const module = { exports };
+  new Function("require", "module", "exports", "window", "document", "requestAnimationFrame", "cancelAnimationFrame", "HTMLElement", output)(() => ({ Keyboard: keyboard }), module, exports, window, document, (callback: () => void) => { nextFrame = callback; return 1; }, () => { nextFrame = undefined; }, class {});
+  const stop = module.exports.trackKeyboardViewport!();
+  await Promise.resolve();
+  nextFrame?.();
+  assert.equal(classes.has("keyboard-open"), false);
+  listeners.get("keyboardWillShow")!(); nextFrame?.();
+  assert.equal(classes.has("keyboard-open"), true);
+  window.innerHeight = 480; viewport.height = 480;
+  viewport.dispatchEvent(new Event("resize")); nextFrame?.();
+  assert.equal(classes.has("keyboard-open"), true, "WebView resizing must not bring navigation back above the IME");
+  assert.equal(properties.get("--app-viewport-height"), "480px");
+  listeners.get("keyboardDidHide")!(); nextFrame?.();
+  assert.equal(classes.has("keyboard-open"), false);
+  window.innerHeight = 800; viewport.height = 800;
+  window.dispatchEvent(new Event("resize")); nextFrame?.();
+  assert.equal(properties.get("--app-viewport-height"), "800px");
+  stop(); await Promise.resolve();
+  assert.equal(listeners.size, 0);
+  assert.equal(properties.size, 0);
+});

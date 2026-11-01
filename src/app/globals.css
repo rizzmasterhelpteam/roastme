@@ -5817,7 +5817,7 @@ small {
   font-size: 15px !important;
   line-height: 20px !important;
   min-height: 20px !important;
-  height: 20px !important;
+  height: 20px;
   max-height: 72px !important;
   padding: 0 !important;
   margin: 0 !important;

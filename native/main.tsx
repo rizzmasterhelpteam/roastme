@@ -14,6 +14,7 @@ import { AppScreen } from "@/components/screens";
 import { consumeAuthLink } from "@/lib/native/auth";
 import { recordAppOpen } from "@/lib/native/notifications";
 import { LocalNotifications } from "@capacitor/local-notifications";
+import { trackKeyboardViewport } from "@/lib/native/keyboard";
 import "@/app/globals.css";
 import "./native.css";
 import "@/app/modern.css";
@@ -103,60 +104,7 @@ function NativeApp() {
         },
       ),
     );
-    const onKeyboardShow = () => {
-      document.documentElement.classList.add("keyboard-open");
-      document.body.classList.add("keyboard-open");
-    };
-    const onKeyboardHide = () => {
-      document.documentElement.classList.remove("keyboard-open");
-      document.body.classList.remove("keyboard-open");
-    };
-    void add(Keyboard.addListener("keyboardWillShow", onKeyboardShow));
-    void add(Keyboard.addListener("keyboardDidShow", onKeyboardShow));
-    void add(Keyboard.addListener("keyboardWillHide", onKeyboardHide));
-    void add(Keyboard.addListener("keyboardDidHide", onKeyboardHide));
-
-    const onViewportResize = () => {
-      if (window.visualViewport) {
-        const isKeyboard =
-          window.innerHeight - window.visualViewport.height > 140;
-        if (isKeyboard) onKeyboardShow();
-        else onKeyboardHide();
-      }
-    };
-    window.visualViewport?.addEventListener("resize", onViewportResize);
-
-    const onFocusIn = (e: FocusEvent) => {
-      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
-      if (
-        tag === "textarea" ||
-        (tag === "input" &&
-          !["range", "checkbox", "radio", "file", "button", "submit"].includes(
-            (e.target as HTMLInputElement).type,
-          ))
-      ) {
-        onKeyboardShow();
-      }
-    };
-    const onFocusOut = (e: FocusEvent) => {
-      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
-      if (tag === "input" || tag === "textarea") {
-        setTimeout(() => {
-          const activeTag = document.activeElement?.tagName?.toLowerCase();
-          if (!activeTag || !["input", "textarea"].includes(activeTag)) {
-            onKeyboardHide();
-          }
-        }, 120);
-      }
-    };
-    window.addEventListener("focusin", onFocusIn);
-    window.addEventListener("focusout", onFocusOut);
-    const onScrollLock = () => {
-      if (window.scrollY !== 0 || window.scrollX !== 0) {
-        window.scrollTo(0, 0);
-      }
-    };
-    window.addEventListener("scroll", onScrollLock, { passive: true });
+    const stopKeyboardTracking = trackKeyboardViewport();
     void Network.getStatus().then((s) => setOffline(!s.connected));
     void add(
       Network.addListener("networkStatusChange", (s) =>
@@ -167,10 +115,7 @@ function NativeApp() {
     return () => {
       disposed = true;
       for (const h of handles) void h.remove();
-      window.visualViewport?.removeEventListener("resize", onViewportResize);
-      window.removeEventListener("focusin", onFocusIn);
-      window.removeEventListener("focusout", onFocusOut);
-      window.removeEventListener("scroll", onScrollLock);
+      stopKeyboardTracking();
     };
   }, [navigate]);
   return (
