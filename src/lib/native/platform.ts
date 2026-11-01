@@ -1,7 +1,8 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
+import { resolveApiOrigin } from "./api-url";
 export const isNative = () => Capacitor.isNativePlatform();
 export const apiOrigin = () =>
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
+  resolveApiOrigin(process.env.NEXT_PUBLIC_API_URL);
 export const authRedirect = () =>
   isNative()
     ? "ai.roastme.app://auth/callback"
