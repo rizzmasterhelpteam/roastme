@@ -2,11 +2,24 @@
 import { Info, Flame } from "lucide-react";
 import { useApp } from "./app-provider";
 import { levelFromChaos } from "@/lib/personas";
+import "./reply-length.css";
 export function Controls({ compact = false }: { compact?: boolean }) {
-  const { chaos, setChaos } = useApp();
+  const { chaos, setChaos, replyLength, setReplyLength } = useApp();
   const level = levelFromChaos(chaos);
   return (
     <section className={`controls ${compact ? "compact" : ""}`}>
+      <fieldset className="reply-length-control">
+        <legend>Reply length</legend>
+        <div>
+          {(["short", "medium", "long"] as const).map((value) => (
+            <button key={value} type="button" aria-pressed={replyLength === value}
+              onClick={() => setReplyLength(value)}>
+              <strong>{value === "short" ? "Short" : value === "medium" ? "Medium" : "Long"}</strong>
+              <small>{value === "short" ? "1 liner" : value === "medium" ? "2–3 lines" : "Full roast"}</small>
+            </button>
+          ))}
+        </div>
+      </fieldset>
       <div className="control-label chaos-label">
         Roast chaos <Info size={13} />
         <span>More chaos means wilder and sharper roasts.</span>

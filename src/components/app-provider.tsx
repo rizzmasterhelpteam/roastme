@@ -29,6 +29,8 @@ type Context = {
   level: string;
   setLevel: (s: string) => void;
   chaos: number;
+  replyLength: "short" | "medium" | "long";
+  setReplyLength: (value: "short" | "medium" | "long") => void;
   setChaos: (n: number) => void;
   auth: (method: string, email?: string) => Promise<void>;
   signout: () => Promise<void>;
@@ -40,12 +42,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState(defaultState),
     [ready, setReady] = useState(false),
     [notice, setNotice] = useState(""),
-    [level, setLevel] = useState("Spicy"),
-    [chaos, setChaosState] = useState(50);
+    [level, setLevel] = useState("Light"),
+    [replyLength, setReplyLength] = useState<"short" | "medium" | "long">("medium"),
+    [chaos, setChaosState] = useState(30);
   const setChaos = useCallback((value: number) => {
     const next = Number.isFinite(value)
       ? Math.max(0, Math.min(100, Math.round(value)))
-      : 50;
+      : 30;
     setChaosState(next);
     setLevel(levelFromChaos(next));
   }, []);
@@ -71,6 +74,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, credits: prev.credits + n }));
   }, []);
   const api = useCallback(async (path: string, body?: ApiBody) => {
+    if (path === "roast" && body) body = { ...body, replyLength };
     const sb = browserSupabase();
     const session = sb ? (await sb.auth.getSession()).data.session : null;
     if (isNative()) {
@@ -109,7 +113,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (data.state) setState(data.state);
     else if (path === "state") setState(data);
     return data as ApiResult;
-  }, []);
+  }, [replyLength]);
   const reload = useCallback(async () => {
     await api("state");
   }, [api]);
@@ -169,7 +173,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const saved = JSON.parse(localStorage.getItem("roast-controls") || "{}");
       if (typeof saved.chaos === "number") setChaos(saved.chaos);
-      else if (saved.level) setLevel(saved.level);
+      if (["short", "medium", "long"].includes(saved.replyLength))
+        setReplyLength(saved.replyLength);
     } catch {}
     return () => {
       mounted = false;
@@ -186,11 +191,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       try {
         localStorage.setItem(
           "roast-controls",
-          JSON.stringify({ level, chaos }),
+          JSON.stringify({ level, chaos, replyLength }),
         );
       } catch {}
     }
-  }, [level, chaos, ready]);
+  }, [level, chaos, replyLength, ready]);
   useEffect(() => {
     if (!notice) return;
     const timer = setTimeout(() => setNotice(""), 5000);
@@ -270,6 +275,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         level,
         setLevel,
         chaos,
+        replyLength,
+        setReplyLength,
         setChaos,
         auth,
         signout,

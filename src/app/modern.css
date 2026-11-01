@@ -1322,3 +1322,73 @@ html:not([data-theme="light"]) .credit-option-icon {
 .account-roast-controls[open] > summary {
   margin-bottom: 10px;
 }
+
+/* The composer owns the focus indicator; avoid a second ring on its textarea. */
+html .insta-input-container textarea:focus,
+html .insta-input-container textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border: 0;
+}
+
+.signin-card.entry-card {
+  width: min(100%, 400px);
+  margin: auto;
+  padding: 28px 24px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: center;
+}
+.signin-card .onboard-mascot {
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 20px;
+}
+.signin-card .entry-brand { font-size: 20px; letter-spacing: -.6px; }
+.signin-card h1 { font-size: 28px; margin: 18px 0 8px; letter-spacing: -.8px; }
+.signin-card > p { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0 auto 24px; max-width: 290px; }
+.signin-card .signin-consent { margin: 0 0 18px; padding: 12px 0; border: 0; background: transparent; text-align: left; font-size: 12px; line-height: 1.6; }
+.signin-card .auth-buttons { margin-top: 0; gap: 10px; }
+.signin-card .auth-buttons > button { min-height: 50px; border-radius: 14px; font-size: 14px; box-shadow: none; }
+.signin-card .auth-buttons > button:disabled { opacity: .55; }
+.signin-card .auth-buttons > .google-button { background: #faf8ff; color: #21152e; border-color: #faf8ff; }
+.signin-card .auth-buttons form { padding: 8px 0; }
+
+/* Consistent starter positions for every persona and every prompt length. */
+.insta-starter-section {
+  max-width: 480px;
+  margin: 20px auto 0;
+  text-align: left;
+}
+.insta-starter-title {
+  margin: 0 0 10px 2px;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.insta-starter-chips {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+.insta-starter-chips .insta-chip {
+  width: 100%;
+  min-width: 0;
+  min-height: 60px;
+  margin: 0;
+  padding: 12px;
+  border-radius: 14px;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.45;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+@media (max-width: 320px) {
+  .insta-starter-chips { grid-template-columns: 1fr; }
+  .insta-starter-chips .insta-chip { min-height: 44px; }
+}

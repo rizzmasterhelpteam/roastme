@@ -4,6 +4,7 @@ export const generationSchema = z.object({
   persona: z.enum(["savage", "grandma", "ceo", "cat", "robot", "drama"]),
   level: z.enum(["Light", "Spicy", "Savage", "Nuclear"]).default("Spicy"),
   chaos: z.number().int().min(0).max(100).default(50),
+  replyLength: z.enum(["short", "medium", "long"]).default("medium"),
   type: z.enum(["text", "chat", "image", "battle"]).default("text"),
   opponent: z
     .enum(["savage", "grandma", "ceo", "cat", "robot", "drama"])

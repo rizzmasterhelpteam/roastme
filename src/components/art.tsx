@@ -15,8 +15,9 @@ export function Portrait({
       className={`portrait ${className}`}
       style={{
         backgroundImage: id === "savage" ? "url(/logo.png)" : "url(/personas.webp)",
-        backgroundSize: id === "savage" ? "100% 100%" : "300% 200%",
-        backgroundPosition: `${(index % 3) * 50}% ${Math.floor(index / 3) * 100}%`,
+        backgroundSize: id === "savage" ? "contain" : "300% 200%",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: id === "savage" ? "center" : `${(index % 3) * 50}% ${Math.floor(index / 3) * 100}%`,
       }}
       {...props}
     />

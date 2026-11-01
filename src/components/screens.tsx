@@ -3653,24 +3653,6 @@ function SignIn({ link = false }: { link?: boolean }) {
           {link ? "Maybe later" : "Continue as guest"}
         </Button>
       </div>
-      <div className="signin-perks">
-        <span>
-          <Coins />5 free credits
-        </span>
-        <span>
-          <LockKeyhole />
-          No card required
-        </span>
-        <span>
-          <Heart />
-          Keep your favorites
-        </span>
-      </div>
-      <p className="legal-copy">
-        By continuing, you agree to our{" "}
-        <Link href="/terms">Terms of Service</Link> and{" "}
-        <Link href="/privacy">Privacy Policy</Link>.
-      </p>
     </div>
   );
 }

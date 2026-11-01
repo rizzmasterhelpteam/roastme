@@ -7,13 +7,13 @@ import path from "node:path";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const res = path.join(root, "android/app/src/main/res");
-const source = await sharp(path.join(root, "public/personas.webp"))
-  .extract({ left: 0, top: 0, width: 512, height: 512 })
+const source = await sharp(process.argv[2] || path.join(root, "public/logo.png"))
+  .resize(1024, 1024, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
   .png().toBuffer();
 const background = "#0c0b10";
 async function padded(size, fraction = 0.8, transparent = false) {
   const edge = Math.round(size * fraction);
-  const art = await sharp(source).resize(edge, edge).toBuffer();
+  const art = await sharp(source).resize(edge, edge, { fit: "contain" }).toBuffer();
   return sharp({ create: { width: size, height: size, channels: 4,
     background: transparent ? { r: 0, g: 0, b: 0, alpha: 0 } : background } })
     .composite([{ input: art, gravity: "centre" }]).png().toBuffer();
