@@ -205,14 +205,13 @@ export function Shell({ children, websiteLinks }: { children: React.ReactNode; w
           )}
         </div>
         {!isChat && (
-          <footer className="desktop-footer">
+          <footer className={`desktop-footer ${websiteLinks ? "website-app-footer" : ""}`}>
             <span>
               <Flame size={12} /> Made with fire. Take it with a grain of salt.
             </span>
             <div>
               {websiteLinks}
-              <Link href="/safety">Community guidelines</Link>
-              <Link href="/privacy">Privacy</Link>
+              {!websiteLinks && <><Link href="/safety">Community guidelines</Link><Link href="/privacy">Privacy</Link></>}
               <span>© {new Date().getFullYear()} Roast Me AI</span>
             </div>
           </footer>
