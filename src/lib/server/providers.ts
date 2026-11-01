@@ -59,8 +59,15 @@ async function openai(
       throw new TextProviderError("The text service has reached its usage budget. Please try later. No credits were used.");
     if (response.status === 404 || code === "model_not_found")
       throw new TextProviderError("The configured text model is unavailable. Please contact support. No credits were used.");
+    if (response.status === 403)
+      throw new TextProviderError("The text service key does not have permission for this model. Please contact support. No credits were used.");
+    if (response.status === 429)
+      throw new TextProviderError("The text service is receiving too many requests. Please try shortly. No credits were used.");
+    const reference = typeof code === "string" && /^[a-z_]{1,64}$/.test(code)
+      ? ` (${response.status}: ${code})`
+      : ` (${response.status})`;
     throw new TextProviderError(
-      "The roast kitchen is busy. Please try again. No credits were used.",
+      `The text service could not process this request${reference}. Please contact support. No credits were used.`,
     );
   }
   const data = await response.json();
