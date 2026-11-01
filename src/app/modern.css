@@ -1440,3 +1440,16 @@ html .insta-input-container textarea:focus-visible {
   .insta-starter-chips { grid-template-columns: 1fr; }
   .insta-starter-chips .insta-chip { min-height: 44px; }
 }
+.settings-language {
+  width: min(44%, 200px);
+  min-width: 100px;
+  padding: 9px 24px 9px 10px;
+  border: 1px solid var(--border, #584174);
+  border-radius: 10px;
+  background: var(--surface, #17132d);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+}
+html[data-theme="light"] .settings-language { background: #fbf6ed; color: #462c35; }
+.settings-language:focus-visible { outline: 2px solid #a875ff; outline-offset: 3px; }

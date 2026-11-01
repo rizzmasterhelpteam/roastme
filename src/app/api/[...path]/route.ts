@@ -5,6 +5,7 @@ import { backend, getState, ensure, ApiError } from "@/lib/server/backend";
 import { generate, demoRoast, SafetyError, TextProviderError } from "@/lib/server/providers";
 import { generationSchema, imageType, reportReasons } from "@/lib/validation";
 import { levelFromChaos, type Roast } from "@/lib/personas";
+import { replyLanguages } from "@/lib/languages";
 import { isAllowedOrigin, corsHeaders } from "@/lib/api-origin";
 import { syncRevenueCat } from "@/lib/server/android-monetization";
 export const runtime = "nodejs";
@@ -344,7 +345,7 @@ async function handle(
           sound: z.boolean(),
           haptics: z.boolean(),
           dark: z.boolean(),
-          language: z.enum(["English"]),
+          language: z.enum(replyLanguages),
         })
         .parse(body);
       if (b.demo) b.record.state.settings = preferences;

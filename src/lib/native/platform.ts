@@ -27,10 +27,13 @@ export async function copyText(text: string) {
     await Clipboard.write({ string: text });
   } else await navigator.clipboard.writeText(text);
 }
+let lastBuzz = 0;
 export async function buzz() {
+  if (Date.now() - lastBuzz < 80) return;
+  lastBuzz = Date.now();
   if (isNative()) {
-    const { Haptics, ImpactStyle } = await import("@capacitor/haptics");
-    await Haptics.impact({ style: ImpactStyle.Light });
+    const { Haptics } = await import("@capacitor/haptics");
+    await Haptics.vibrate({ duration: 18 });
   } else navigator.vibrate?.(20);
 }
 export async function shareImage(blob: Blob, share: boolean) {

@@ -5,10 +5,12 @@ import {
   useContext,
   useEffect,
   useState,
+  useRef,
 } from "react";
 import { defaultState, levelFromChaos, type AppState } from "@/lib/personas";
 import { browserSupabase } from "@/lib/supabase";
 import { isNative, authRedirect } from "@/lib/native/platform";
+import { clickFeedback, playSound, unlockAudio } from "@/lib/feedback";
 type ApiBody = Record<string, unknown>;
 type ApiResult = { state?: AppState; [key: string]: unknown };
 export class ClientError extends Error {
@@ -43,8 +45,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [ready, setReady] = useState(false),
     [notice, setNotice] = useState(""),
     [level, setLevel] = useState("Light"),
-    [replyLength, setReplyLength] = useState<"short" | "medium" | "long">("medium"),
+    [replyLength, setReplyLength] = useState<"short" | "medium" | "long">(
+      "medium",
+    ),
     [chaos, setChaosState] = useState(30);
+  const preferences = useRef({ replyLength, settings: state.settings });
+  preferences.current = { replyLength, settings: state.settings };
+  useEffect(() => {
+    const click = (event: MouseEvent) => {
+      const target =
+        event.target instanceof Element
+          ? event.target.closest(
+              "button, a, input[type=checkbox], input[type=range], select, summary",
+            )
+          : null;
+      if (!target || target.matches(":disabled, [aria-disabled=true]")) return;
+      const settings = preferences.current.settings;
+      clickFeedback(settings.sound === true, settings.haptics === true);
+    };
+    const unlock = () => {
+      if (preferences.current.settings.sound) unlockAudio();
+    };
+    document.addEventListener("click", click, true);
+    document.addEventListener("pointerdown", unlock, true);
+    document.addEventListener("keydown", unlock, true);
+    return () => {
+      document.removeEventListener("click", click, true);
+      document.removeEventListener("pointerdown", unlock, true);
+      document.removeEventListener("keydown", unlock, true);
+    };
+  }, []);
   const setChaos = useCallback((value: number) => {
     const next = Number.isFinite(value)
       ? Math.max(0, Math.min(100, Math.round(value)))
@@ -53,6 +83,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setLevel(levelFromChaos(next));
   }, []);
   const toast = useCallback((text: string) => setNotice(text), []);
+  useEffect(() => {
+    if (isNative()) return;
+    const refresh = () => {
+      void import("@/lib/native/notifications")
+        .then(({ recordAppOpen }) => recordAppOpen())
+        .catch(() => {});
+    };
+    refresh();
+    const visible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", visible);
+    return () => document.removeEventListener("visibilitychange", visible);
+  }, []);
   useEffect(() => {
     const dark = state.settings.dark !== false;
     document.documentElement.dataset.theme = dark ? "dark" : "light";
@@ -74,7 +118,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, credits: prev.credits + n }));
   }, []);
   const api = useCallback(async (path: string, body?: ApiBody) => {
-    if (path === "roast" && body) body = { ...body, replyLength };
+    if (path === "roast" && body)
+      body = {
+        ...body,
+        replyLength: preferences.current.replyLength,
+        language: preferences.current.settings.language || "English",
+      };
+    const replyFeedback = () => {
+      if (path !== "roast") return;
+      if (preferences.current.settings.sound) playSound("reply");
+      if (preferences.current.settings.haptics)
+        void import("@/lib/native/platform")
+          .then(({ buzz }) => buzz())
+          .catch(() => {});
+    };
     const sb = browserSupabase();
     const session = sb ? (await sb.auth.getSession()).data.session : null;
     if (isNative()) {
@@ -93,6 +150,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         );
       if (data.state) setState(data.state);
       else if (path === "state") setState(data);
+      replyFeedback();
       return data as ApiResult;
     }
     const res = await fetch(`/api/${path}`, {
@@ -112,8 +170,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       );
     if (data.state) setState(data.state);
     else if (path === "state") setState(data);
+    replyFeedback();
     return data as ApiResult;
-  }, [replyLength]);
+  }, []);
   const reload = useCallback(async () => {
     await api("state");
   }, [api]);

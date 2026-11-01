@@ -64,9 +64,10 @@ import { Controls } from "./controls";
 import { Button } from "./ui/button";
 import { personas, findPersona, type Roast } from "@/lib/personas";
 import { reportReasons } from "@/lib/validation";
+import { replyLanguages, languageLabels } from "@/lib/languages";
+import { playSound, unlockAudio } from "@/lib/feedback";
 import {
   copyText,
-  buzz,
   shareImage,
   isNative,
   apiOrigin,
@@ -609,7 +610,6 @@ function InstaChatScreen({
     const isCurrentlyLiked =
       likedMap[r.id] ?? (r.feedback === "like" || r.saved);
     setLikedMap((prev) => ({ ...prev, [r.id]: !isCurrentlyLiked }));
-    if (state.settings.haptics) void buzz().catch(() => {});
     try {
       await api("history/feedback", {
         id: r.id,
@@ -662,7 +662,6 @@ function InstaChatScreen({
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto";
       }
-      if (state.settings.haptics) void buzz().catch(() => {});
       if (!state.premium && state.credits - cost <= 0) {
         openCredits();
       }
@@ -811,7 +810,6 @@ function InstaChatScreen({
                       onClick={() => {
                         setSelected(item.id);
                         setDropdownOpen(false);
-                        if (state.settings.haptics) void buzz().catch(() => {});
                       }}
                     >
                       <div className="insta-item-avatar-wrap">
@@ -1582,7 +1580,6 @@ function ComposerScreen({
       const roast = res.roast as Roast;
       setResultId(roast.id);
       if (mode === "chat") setPrompt("");
-      if (state.settings.haptics) void buzz().catch(() => {});
     } catch (e) {
       if (e instanceof ClientError && e.outOfCredits) setCredits(true);
       else if (e instanceof ClientError && e.blocked) setBlocked(true);
@@ -3823,8 +3820,14 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
   const { busy, run } = useAction();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [notificationsReady, setNotificationsReady] = useState(false);
+  const [capabilities, setCapabilities] = useState({ notifications: false, haptics: false });
   useEffect(() => {
-    if (!isNative()) return;
+    setCapabilities({
+      notifications: isNative() || ("Notification" in window && window.isSecureContext),
+      haptics: isNative() || "vibrate" in navigator,
+    });
+  }, []);
+  useEffect(() => {
     const refresh = () => {
       void import("@/lib/native/notifications")
         .then(({ notificationEnabled }) => notificationEnabled())
@@ -3867,9 +3870,9 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
               title: "Notifications",
               desc: isNative()
                 ? "One daily reminder at your usual time"
-                : "Available in the Android app",
-              status: "Coming soon",
-              disabled: !isNative(),
+                : "Daily reminder while this site is open",
+              status: "Unsupported browser",
+              disabled: !capabilities.notifications,
             },
             {
               key: "dark",
@@ -3883,17 +3886,17 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
               key: "sound",
               icon: Volume2,
               title: "Sound effects",
-              desc: "Extra sound with your burns",
-              status: "Coming soon",
-              disabled: true,
+              desc: "Subtle clicks and a soft reply tone",
+              status: "",
+              disabled: false,
             },
             {
               key: "haptics",
               icon: Smartphone,
               title: "Haptic feedback",
-              desc: "Feel a buzz when the roast lands",
-              status: "",
-              disabled: false,
+              desc: "Gentle feedback on taps and replies",
+              status: "Unsupported browser",
+              disabled: !capabilities.haptics,
             },
           ].map(({ key, icon: Icon, title, desc, disabled, status }) => (
             <div className="settings-row" key={key}>
@@ -3918,7 +3921,11 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
                     busy || (key === "notifications" && !notificationsReady)
                   }
                   className={`settings-switch ${(key === "notifications" ? notificationsEnabled : state.settings[key]) ? "on" : ""}`}
-                  onClick={() =>
+                  onClick={() => {
+                    if (key === "sound" && !state.settings.sound) {
+                      unlockAudio();
+                      playSound("reply");
+                    }
                     void run(async () => {
                       if (key === "notifications") {
                         const { setNotificationEnabled } =
@@ -3928,7 +3935,7 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
                         setNotificationsEnabled(enabled);
                         if (requested && !enabled)
                           throw new Error(
-                            "Notifications are blocked. Enable them in your phone settings.",
+                            "Notifications are blocked. Enable them in your device or browser site settings.",
                           );
                         toast(
                           enabled
@@ -3942,8 +3949,8 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
                         [key]: !state.settings[key],
                       });
                       toast("Preference saved.");
-                    })
-                  }
+                    });
+                  }}
                 >
                   <span />
                 </button>
@@ -3953,11 +3960,54 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
           <div className="settings-row">
             <Globe />
             <span>
-              <b>Language</b>
-              <small>More languages coming soon</small>
+              <b>Reply language</b>
+              <small>Language of new roasts · Menus stay in English</small>
             </span>
-            <span className="settings-status">English</span>
+            <select
+              aria-label="Reply language"
+              className="settings-language"
+              disabled={busy}
+              value={String(state.settings.language || "English")}
+              onChange={(event) => {
+                const language = event.target.value;
+                void run(async () => {
+                  await api("settings", { ...state.settings, language });
+                  toast("Reply language saved.");
+                });
+              }}
+            >
+              {replyLanguages.map((language) => (
+                <option key={language} value={language}>
+                  {languageLabels[language]}
+                </option>
+              ))}
+            </select>
           </div>
+          {notificationsEnabled && (
+            <button
+              className="settings-row"
+              disabled={busy}
+              onClick={() =>
+                void run(async () => {
+                  const { testNotification } =
+                    await import("@/lib/native/notifications");
+                  await testNotification();
+                  toast(
+                    isNative()
+                      ? "Test reminder arrives in 3 seconds."
+                      : "Test notification sent.",
+                  );
+                })
+              }
+            >
+              <Bell />
+              <span>
+                <b>Test notification</b>
+                <small>Check that reminders reach this device</small>
+              </span>
+              <ChevronRight />
+            </button>
+          )}
         </div>
       </div>
       <div className="settings-group">

@@ -4,7 +4,7 @@ import {
   type Weekday,
 } from "@capacitor/local-notifications";
 import { Preferences } from "@capacitor/preferences";
-import { SecureSession } from "./platform";
+import { SecureSession, isNative } from "./platform";
 
 export const REMINDER_MESSAGES = [
   "Your free credits are ready. Your ego might not be.",
@@ -32,6 +32,66 @@ type ReminderState = {
   opens: number[];
 };
 let task: Promise<unknown> = Promise.resolve();
+let webTimer: ReturnType<typeof setTimeout> | undefined;
+function stopWebTimer() {
+  if (webTimer) clearTimeout(webTimer);
+  webTimer = undefined;
+}
+async function showWebNotification(body: string) {
+  const options = {
+    body,
+    icon: "/favicon-savage.png",
+    tag: "daily-roast",
+    silent: true,
+  };
+  if ("serviceWorker" in navigator) {
+    const registration =
+      await navigator.serviceWorker.register("/reminder-sw.js");
+    if (!registration.active) await navigator.serviceWorker.ready;
+    await registration.showNotification("Roast Me AI", options);
+  } else {
+    const notification = new Notification("Roast Me AI", options);
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
+      location.assign("/");
+    };
+  }
+}
+function scheduleWeb(state: ReminderState) {
+  stopWebTimer();
+  if (
+    !state.enabled ||
+    !("Notification" in window) ||
+    Notification.permission !== "granted"
+  )
+    return;
+  const now = new Date();
+  const choice = chooseReminderTime(
+    state.installedAt,
+    state.opens,
+    now.getTime(),
+  );
+  const at = new Date(now);
+  at.setHours(choice.hour, choice.minute, 0, 0);
+  if (at <= now) at.setDate(at.getDate() + 1);
+  webTimer = setTimeout(() => {
+    void read()
+      .then(async (latest) => {
+        if (!latest?.enabled || Notification.permission !== "granted") return;
+        const day = new Date().toDateString();
+        const last = await Preferences.get({ key: KEY + "-last-web" });
+        if (last.value !== day) {
+          await showWebNotification(
+            REMINDER_MESSAGES[randomIndex(REMINDER_MESSAGES.length)],
+          );
+          await Preferences.set({ key: KEY + "-last-web", value: day });
+        }
+        scheduleWeb(latest);
+      })
+      .catch(() => {});
+  }, at.getTime() - now.getTime());
+}
 function serial<T>(fn: () => Promise<T>): Promise<T> {
   const next = task.then(fn, fn);
   task = next.catch(() => {});
@@ -92,11 +152,19 @@ function randomIndex(max: number): number {
   return values[0] % max;
 }
 async function cancel() {
+  if (!isNative()) {
+    stopWebTimer();
+    return;
+  }
   await LocalNotifications.cancel({
     notifications: Array.from({ length: 7 }, (_, i) => ({ id: BASE + i })),
   });
 }
 async function schedule(state: ReminderState, preserveToday: boolean) {
+  if (!isNative()) {
+    scheduleWeb(state);
+    return;
+  }
   const permission = await LocalNotifications.checkPermissions();
   if (permission.display !== "granted") {
     if (state.enabled) {
@@ -156,9 +224,17 @@ async function schedule(state: ReminderState, preserveToday: boolean) {
 export async function notificationEnabled(): Promise<boolean> {
   const state = await read();
   if (!state?.enabled) return false;
+  if (!isNative())
+    return "Notification" in window && Notification.permission === "granted";
   return (await LocalNotifications.checkPermissions()).display === "granted";
 }
 export function setNotificationEnabled(enabled: boolean): Promise<boolean> {
+  const webPermission =
+    enabled && !isNative() && "Notification" in window && window.isSecureContext
+      ? Notification.permission === "granted"
+        ? Promise.resolve("granted")
+        : Notification.requestPermission()
+      : undefined;
   return serial(async () => {
     let state = await read();
     if (!state)
@@ -173,6 +249,19 @@ export function setNotificationEnabled(enabled: boolean): Promise<boolean> {
         opens: [],
       };
     if (enabled) {
+      if (!isNative()) {
+        if (!("Notification" in window) || !window.isSecureContext)
+          throw new Error(
+            "This browser does not support notifications. Use the Android app for daily background reminders.",
+          );
+        // Ask during the explicit toggle action, never during page initialization.
+        const permission = await webPermission;
+        state.enabled = permission === "granted";
+        state.asked = true;
+        await write(state);
+        scheduleWeb(state);
+        return state.enabled;
+      }
       let permission = await LocalNotifications.checkPermissions();
       if (permission.display !== "granted")
         permission = await LocalNotifications.requestPermissions();
@@ -203,6 +292,28 @@ export function setNotificationEnabled(enabled: boolean): Promise<boolean> {
     return enabled;
   });
 }
+export async function testNotification(): Promise<void> {
+  if (!(await notificationEnabled()))
+    throw new Error("Enable notifications first.");
+  if (!isNative()) {
+    await showWebNotification(
+      "Your reminders are ready. Your ego has been warned.",
+    );
+    return;
+  }
+  await LocalNotifications.schedule({
+    notifications: [
+      {
+        id: BASE + 20,
+        title: "Roast Me AI",
+        body: "Your reminders are ready. Your ego has been warned.",
+        channelId: CHANNEL,
+        schedule: { at: new Date(Date.now() + 3000) },
+        extra: { kind: "daily-roast" },
+      },
+    ],
+  });
+}
 export function recordAppOpen(): Promise<void> {
   return serial(async () => {
     const now = Date.now();
@@ -217,6 +328,10 @@ export function recordAppOpen(): Promise<void> {
         installedAt: installed,
         opens: [],
       };
+      if (!isNative()) {
+        await write(state);
+        return;
+      }
       let permission = await LocalNotifications.checkPermissions();
       if (
         permission.display === "prompt" ||
@@ -240,6 +355,7 @@ export function clearNotificationData(): Promise<void> {
       await cancel();
     } finally {
       await Preferences.remove({ key: KEY });
+      await Preferences.remove({ key: KEY + "-last-web" });
       window.dispatchEvent(new Event("roast:notifications-changed"));
     }
   });
