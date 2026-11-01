@@ -28,7 +28,7 @@ const nav = [
   { href: "/saved", label: "Saved burns", icon: Heart },
 ];
 
-export function Shell({ children }: { children: React.ReactNode }) {
+export function Shell({ children, websiteLinks }: { children: React.ReactNode; websiteLinks?: React.ReactNode }) {
   const path = usePathname();
   const { state, ready } = useApp();
   const [creditsOpen, setCreditsOpen] = useState(false);
@@ -103,6 +103,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </Link>
         </div>
         <div className="sidebar-bottom">
+          {websiteLinks}
           <Link className="nav-link" href="/settings">
             <Settings size={19} /> Account & settings
           </Link>
@@ -209,6 +210,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <Flame size={12} /> Made with fire. Take it with a grain of salt.
             </span>
             <div>
+              {websiteLinks}
               <Link href="/safety">Community guidelines</Link>
               <Link href="/privacy">Privacy</Link>
               <span>© {new Date().getFullYear()} Roast Me AI</span>

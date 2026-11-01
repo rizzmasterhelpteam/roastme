@@ -1,22 +1,26 @@
 import type { Metadata, Viewport } from "next";
-import { AppProvider } from "@/components/app-provider";
-import { Shell } from "@/components/shell";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 import "./modern.css";
 import "./light.css";
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  openGraph: { siteName: "Roast Me AI", type: "website", images: [{ url: "/social-preview.png", width: 1200, height: 630, alt: "Roast Me AI — Pick a persona. Get roasted." }] },
+  twitter: { card: "summary_large_image", images: ["/social-preview.png"] },
   title: "Roast Me AI — Pick a persona. Get roasted.",
   description:
     "Six personalities. Infinite ways to humble your ego. Playful AI roasts, photo roasts, and roast battles.",
   applicationName: "Roast Me AI",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icon.svg", apple: "/apple-touch-icon.png" },
+  icons: {
+    icon: [{ url: "/favicon-savage.png", type: "image/png", sizes: "64x64" }],
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   themeColor: "#090a20",
 };
 export default function RootLayout({
@@ -27,9 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AppProvider>
-          <Shell>{children}</Shell>
-        </AppProvider>
+        {children}
       </body>
     </html>
   );

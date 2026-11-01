@@ -1,0 +1,5 @@
+import Link from "next/link";
+import "./website.css";
+export default function PublicLayout({ children }: { children: React.ReactNode }) {
+  return <div className="website"><a className="web-skip" href="#website-content">Skip to content</a><header className="web-header"><Link href="/" className="web-brand"><img src="/logo.png" width="48" height="48" alt="" /><span>ROAST ME <em>AI</em></span></Link><nav aria-label="Website navigation"><Link href="/about">About</Link><Link href="/blog">Blog</Link><Link href="/help">Help</Link><Link className="web-cta" href="/">Start roasting ↗</Link></nav></header><main id="website-content" className="web-main">{children}</main><footer className="web-footer"><p>Same jokes. Higher standards.</p><nav aria-label="Footer navigation"><Link href="/blog">Blog</Link><Link href="/guidelines">Guidelines</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/help">Help</Link></nav><small>© {new Date().getFullYear()} Roast Me AI</small></footer></div>;
+}
