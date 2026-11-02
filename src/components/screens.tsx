@@ -557,7 +557,7 @@ function InstaChatScreen({
     const frame = window.requestAnimationFrame(() => {
       viewport.scrollTo({
         top: viewport.scrollHeight,
-        behavior: firstLoadedView ? "auto" : "smooth",
+        behavior: firstLoadedView || busy ? "auto" : "smooth",
       });
     });
     return () => window.cancelAnimationFrame(frame);
