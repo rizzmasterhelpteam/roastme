@@ -1,0 +1,32 @@
+import { chromium, expect } from '@playwright/test';
+import { mkdir } from 'node:fs/promises';
+const browser = await chromium.connectOverCDP('http://127.0.0.1:9224');
+const page = browser.contexts()[0].pages()[0];
+page.setDefaultTimeout(30000);
+await mkdir('work/phone-check', { recursive: true });
+const errors=[];
+page.on('pageerror', e=>errors.push(e.message));
+try {
+  await page.goto('https://localhost/settings');
+  await expect(page.getByLabel('Reply language',{exact:true})).toBeVisible();
+  console.log('Original language:',await page.getByLabel('Reply language',{exact:true}).inputValue());
+  await page.getByLabel('Reply language',{exact:true}).selectOption('Hindi');
+  await expect(page.getByLabel('Reply language',{exact:true})).toHaveValue('Hindi');
+  await expect(page.locator('.toast')).toContainText('saved');
+  await expect(page.getByRole('button',{name:'Test notification'})).toHaveCount(0);
+  await page.screenshot({path:'work/phone-check/settings.png'});
+  await page.goto('https://localhost/');
+  await expect(page.locator('.insta-assistant-bubble').first()).toBeVisible();
+  const before=await page.locator('.insta-assistant-bubble').count();
+  await page.locator('#roast-prompt').fill('Roast my coffee habit, this is a UI test.');
+  await page.getByRole('button',{name:'Send message',exact:true}).click();
+  await expect(page.locator('#roast-prompt')).toHaveValue('');
+  await expect(page.locator('.insta-user-bubble').last()).toContainText('this is a UI test');
+  await page.screenshot({path:'work/phone-check/sending.png'});
+  await expect(page.locator('.insta-assistant-bubble')).toHaveCount(before+1,{timeout:100000});
+  console.log('Hindi reply:',await page.locator('.insta-assistant-bubble').last().innerText());
+  console.log('Credits:',await page.locator('.credit-badge b').innerText().catch(()=>page.locator('.insta-credits-pill').innerText()));
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.screenshot({path:'work/phone-check/reply.png'});
+  console.log('JS errors:',errors);
+} finally {await browser.close();}

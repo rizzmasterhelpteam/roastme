@@ -634,7 +634,7 @@ function InstaChatScreen({
   }
 
   async function submit(value = prompt) {
-    if (busy) return;
+    if (busy || !ready || !sessionId) return;
     const hasImg = Boolean(attachedImage);
     const cost = hasImg ? 2 : 1;
     if (!state.premium && state.credits < cost) {
@@ -859,7 +859,7 @@ function InstaChatScreen({
         <DemoNotice />
 
         {/* Empty State / Instagram DM Profile Card */}
-        {messages.length === 0 && (
+        {messages.length === 0 && !busy && (
           <div className="insta-profile-intro">
             <div className="insta-intro-avatar-ring">
               <Portrait id={p.id} className="insta-intro-avatar" />
@@ -1120,7 +1120,7 @@ function InstaChatScreen({
 
             <button
               type="submit"
-              disabled={busy || (!prompt.trim() && !attachedImage)}
+              disabled={busy || !ready || !sessionId || (!prompt.trim() && !attachedImage)}
               aria-label="Send message"
               className={`insta-send-btn ${prompt.trim() || attachedImage ? "active" : ""}`}
             >
@@ -3849,7 +3849,7 @@ function Row({
   );
 }
 function Settings({ embedded = false }: { embedded?: boolean }) {
-  const { state, api, toast } = useApp();
+  const { state, api, toast, ready } = useApp();
   const { busy, run } = useAction();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [notificationsReady, setNotificationsReady] = useState(false);
@@ -3999,7 +3999,7 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
             <select
               aria-label="Reply language"
               className="settings-language"
-              disabled={busy}
+              disabled={busy || !ready}
               value={String(state.settings.language || "English")}
               onChange={(event) => {
                 const language = event.target.value;
