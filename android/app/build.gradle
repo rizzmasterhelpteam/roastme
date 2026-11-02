@@ -4,7 +4,7 @@ android {
     namespace = "ai.roastme.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "ai.roastme.app"
+        applicationId "com.roastmeai.vantalum"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

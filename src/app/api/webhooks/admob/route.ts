@@ -28,11 +28,13 @@ export async function GET(request: Request) {
     if (!publicKey) throw new Error("Unknown key");
     const signed = verifyAdSignature(url.search.slice(1), publicKey.pem);
     if (
-      signed.get("ad_unit") !== unit ||
-      Number(signed.get("reward_amount")) !== 5
+      signed.get("ad_unit") !== unit.split("/").pop() ||
+      !Number.isFinite(Number(signed.get("reward_amount"))) ||
+      Number(signed.get("reward_amount")) <= 0
     )
       throw new Error("Invalid ad reward");
-    const timestamp = Number(signed.get("timestamp"));
+    const rawTimestamp = Number(signed.get("timestamp"));
+    const timestamp = rawTimestamp > 1e14 ? rawTimestamp / 1000 : rawTimestamp;
     if (
       !Number.isFinite(timestamp) ||
       Math.abs(Date.now() - timestamp) > 15 * 60000

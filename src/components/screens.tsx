@@ -178,6 +178,13 @@ function Modal({
 export function OutOfCredits({ close }: { close: () => void }) {
   const { api, toast, state } = useApp();
   const { busy, run } = useAction();
+  const [showPremium, setShowPremium] = useState(false);
+
+  if (showPremium) return (
+    <Modal title="Premium" onClose={close}>
+      <Premium inModal />
+    </Modal>
+  );
 
   return (
     <Modal title="Your credits" onClose={close}>
@@ -199,9 +206,9 @@ export function OutOfCredits({ close }: { close: () => void }) {
           roasts.
         </p>
         <div className="credit-modal-actions">
-          <Link
-            href="/premium"
-            onClick={close}
+          <button
+            type="button"
+            onClick={() => setShowPremium(true)}
             className="credit-modal-option premium-option"
           >
             <span className="credit-option-icon">
@@ -212,15 +219,15 @@ export function OutOfCredits({ close }: { close: () => void }) {
               <small>Unlimited roasts · no ads</small>
             </span>
             <ChevronRight size={17} />
-          </Link>
-          <button
+          </button>
+          {!state.premium && state.credits === 0 && <button
             type="button"
             className="credit-modal-option"
             disabled={busy}
             onClick={() =>
               void run(async () => {
                 await api("rewards/ad", {});
-                toast("5 credits added after ad verification.");
+                toast("5 credits added.");
                 close();
               })
             }
@@ -234,10 +241,10 @@ export function OutOfCredits({ close }: { close: () => void }) {
             </span>
             <span>
               <b>{busy ? "Checking your reward…" : "Watch an ad"}</b>
-              <small>Earn 5 credits when verified</small>
+              <small>Earn 5 credits after watching</small>
             </span>
             <ChevronRight size={17} />
-          </button>
+          </button>}
         </div>
         <div className="credit-modal-reset">
           <Info size={15} />
@@ -479,6 +486,9 @@ function InstaChatScreen({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
+  const [premiumOpen, setPremiumOpen] = useState(false);
+  const { busy: adBusy, run: runAd } = useAction();
+  const [pendingMessage, setPendingMessage] = useState<{ text: string; image: boolean } | null>(null);
   const [blocked, setBlocked] = useState(false);
   const [controlOpen, setControlOpen] = useState(false);
   const [attachedImage, setAttachedImage] = useState("");
@@ -628,7 +638,7 @@ function InstaChatScreen({
     const hasImg = Boolean(attachedImage);
     const cost = hasImg ? 2 : 1;
     if (!state.premium && state.credits < cost) {
-      openCredits();
+      if (state.credits > 0) openCredits();
       return;
     }
     const text =
@@ -641,6 +651,11 @@ function InstaChatScreen({
       return;
     }
     setBusy(true);
+    setPendingMessage({ text, image: hasImg });
+    setPrompt("");
+    setAttachedImage("");
+    setAttachedFileName("");
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
     setBlocked(false);
     const sid = sessionId || crypto.randomUUID();
     if (!sessionId) setSessionId(sid);
@@ -656,16 +671,12 @@ function InstaChatScreen({
         sessionId: sid,
         ...(hasImg ? { image: attachedImage } : {}),
       });
-      setPrompt("");
-      setAttachedImage("");
-      setAttachedFileName("");
-      if (textareaRef.current) {
-        textareaRef.current.style.height = "auto";
-      }
-      if (!state.premium && state.credits - cost <= 0) {
-        openCredits();
-      }
     } catch (e) {
+      setPrompt((current) => current || (value === prompt ? value : ""));
+      if (hasImg) {
+        setAttachedImage(attachedImage);
+        setAttachedFileName(attachedFileName);
+      }
       if (e instanceof ClientError && e.outOfCredits) openCredits();
       else if (e instanceof ClientError && e.blocked) setBlocked(true);
       else
@@ -673,6 +684,7 @@ function InstaChatScreen({
           e instanceof Error ? e.message : "The roast could not be generated.",
         );
     } finally {
+      setPendingMessage(null);
       setBusy(false);
     }
   }
@@ -961,6 +973,26 @@ function InstaChatScreen({
             );
           })}
 
+          {pendingMessage && (
+            <div className="insta-bubble-wrap user">
+              <div className="insta-user-bubble">
+                {pendingMessage.image && <div className="insta-user-photo-indicator"><ImagePlus size={13} /><span>Photo roast</span></div>}
+                {pendingMessage.text}
+              </div>
+            </div>
+          )}
+
+          {!state.premium && state.credits === 0 && !busy && (
+            <div className="chat-credit-offer">
+              <p>No credits left. Keep the roasts coming.</p>
+              <div className="chat-credit-offer-actions">
+                <button type="button" onClick={() => setPremiumOpen(true)}><b>Go Premium</b><small>Unlimited roasts</small></button>
+                <button type="button" disabled={adBusy} onClick={() => void runAd(async () => { await api("rewards/ad", {}); toast("5 credits added."); })}><b>{adBusy ? "Loading…" : "Watch an ad"}</b><small>+5 credits</small></button>
+              </div>
+              <small>Free credits reset at 00:00 UTC.</small>
+            </div>
+          )}
+
           {/* Typing Indicator */}
           {busy && (
             <div className="insta-bubble-wrap assistant typing-state">
@@ -978,6 +1010,7 @@ function InstaChatScreen({
 
           <div ref={endRef} />
         </div>
+        {premiumOpen && <Modal title="Premium" onClose={() => setPremiumOpen(false)}><Premium inModal /></Modal>}
       </div>
 
       {/* Blocked or Composer */}
@@ -3225,7 +3258,7 @@ function Rewards() {
   );
 }
 
-function Premium() {
+function Premium({ inModal = false }: { inModal?: boolean }) {
   const { api, state, ready } = useApp();
   const [plan, setPlan] = useState("monthly");
   const [storePrices, setStorePrices] = useState<Record<string, string>>({});
@@ -3257,7 +3290,7 @@ function Premium() {
   const { busy, run } = useAction();
   return (
     <div className="screen-narrow premium-page">
-      <Back />
+      {!inModal && <Back />}
       <div className="premium-intro">
         <div className="premium-crown">
           <Crown size={26} />
@@ -3983,31 +4016,6 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
               ))}
             </select>
           </div>
-          {notificationsEnabled && (
-            <button
-              className="settings-row"
-              disabled={busy}
-              onClick={() =>
-                void run(async () => {
-                  const { testNotification } =
-                    await import("@/lib/native/notifications");
-                  await testNotification();
-                  toast(
-                    isNative()
-                      ? "Test reminder arrives in 3 seconds."
-                      : "Test notification sent.",
-                  );
-                })
-              }
-            >
-              <Bell />
-              <span>
-                <b>Test notification</b>
-                <small>Check that reminders reach this device</small>
-              </span>
-              <ChevronRight />
-            </button>
-          )}
         </div>
       </div>
       <div className="settings-group">
@@ -4027,12 +4035,7 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
               }
             />
           )}
-          <Row
-            href="/safety"
-            icon={<ShieldCheck />}
-            title="Safety & guidelines"
-          />
-          <Row href="/about" icon={<Mail />} title="Help & feedback" />
+          <Row href="/about" icon={<Mail />} title="Help, safety & feedback" />
           <Row href="/privacy" icon={<LockKeyhole />} title="Privacy policy" />
         </div>
       </div>

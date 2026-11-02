@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Roast Me AI</string>
     <string name="title_activity_main">Roast Me AI</string>
-    <string name="package_name">ai.roastme.app</string>
+    <string name="package_name">com.roastmeai.vantalum</string>
     <string name="custom_url_scheme">ai.roastme.app</string>
 </resources>

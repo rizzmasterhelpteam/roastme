@@ -100,7 +100,7 @@ export async function nativeRequest(
   if (path === "billing/manage") {
     const { Browser } = await import("@capacitor/browser");
     await Browser.open({
-      url: "https://play.google.com/store/account/subscriptions?package=ai.roastme.app",
+      url: "https://play.google.com/store/account/subscriptions?package=com.roastmeai.vantalum",
     });
     return request("state");
   }
@@ -124,25 +124,9 @@ export async function nativeRequest(
     await AdMob.prepareRewardVideoAd({
       adId,
       isTesting: adId === GOOGLE_REWARDED_TEST_AD_UNIT,
-      ssv: { userId, customData: intent.data.intentId },
     });
     await AdMob.showRewardVideoAd();
-    // The SDK callback never grants credits. Only Google's verified server callback can.
-    for (let i = 0; i < 10; i++) {
-      await new Promise((r) => setTimeout(r, 1500));
-      const verified = await request(
-        `rewards/status?intent=${encodeURIComponent(intent.data.intentId)}`,
-      );
-      if (verified.status !== 200) return verified;
-      if (verified.data.verified)
-        return request("state").then((r) => ({
-          status: r.status,
-          data: { state: r.data },
-        }));
-    }
-    throw new Error(
-      "Ad verification is pending. Your balance will update after the server confirms it.",
-    );
+    return request("rewards/claim", { intentId: intent.data.intentId });
   }
   return request(path, body);
 }

@@ -1,6 +1,6 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 const config: CapacitorConfig = {
-  appId: "ai.roastme.app",
+  appId: "com.roastmeai.vantalum",
   appName: "Roast Me AI",
   webDir: "dist-native",
   server: { androidScheme: "https", hostname: "localhost" },

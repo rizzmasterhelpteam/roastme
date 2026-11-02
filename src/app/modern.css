@@ -1,7 +1,27 @@
 /* Shared midnight-violet visual system for web and Android. */
 /* Define the inherited family for form controls as well as body text. */
 :root { --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-@media (min-width: 901px) {
+.chat-credit-offer { width: min(100%, 520px); margin: 12px auto; padding: 16px; text-align: center; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.chat-credit-offer p { margin: 0 0 12px; font-weight: 650; }
+.chat-credit-offer > small { display: block; margin-top: 10px; color: var(--muted); }
+.chat-credit-offer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.chat-credit-offer-actions button { min-width: 0; padding: 12px 8px; border: 1px solid #a46ae0; border-radius: 14px; background: var(--surface2); color: var(--text); cursor: pointer; }
+.chat-credit-offer-actions button:first-child { background: #b567ea; color: #130820; }
+.chat-credit-offer-actions b, .chat-credit-offer-actions small { display: block; }
+.chat-credit-offer-actions small { margin-top: 4px; }
+.modal:has(.premium-page) {
+  width: min(92vw, 440px);
+  max-height: min(90dvh, 780px);
+  overflow-y: auto;
+  border-top: 3px solid #d9a34a;
+}
+.modal .premium-page { padding: 0; min-height: 0; }
+.modal .premium-intro { justify-content: center; text-align: center; flex-direction: column; }
+.modal .premium-benefits { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.modal .premium-benefits > div { font-size: 13px; }
+.modal .premium-page .plan-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.modal .premium-page .paywall-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 641px) {
   .chat-screen-layout .workspace {
     height: 100dvh;
     min-height: 0;

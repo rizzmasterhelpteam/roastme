@@ -70,10 +70,22 @@ async function handle(
         throw new ApiError("Rewarded ads are not configured yet.", 503);
       const state = await getState(b);
       if (state.premium) throw new ApiError("Premium members don’t need ads.");
+      if (state.credits > 0) throw new ApiError("Use your remaining credits before watching an ad.");
       const intent = ensure(
         await b.db.rpc("create_ad_intent", { p_user: b.id }),
       );
       return NextResponse.json({ intentId: intent.data });
+    }
+    if (path === "rewards/claim") {
+      if (b.demo || !process.env.ADMOB_REWARDED_AD_UNIT)
+        throw new ApiError("Rewarded ads are not configured yet.", 503);
+      const intentId = z.string().uuid().parse(body.intentId);
+      ensure(await b.db.rpc("grant_verified_ad", {
+        p_user: b.id,
+        p_intent: intentId,
+        p_event: `client:${intentId}`,
+      }));
+      return NextResponse.json({ state: await getState(b) });
     }
     if (path === "roast") {
       const input = generationSchema.parse(body);
@@ -354,7 +366,9 @@ async function handle(
           await b.db
             .from("user_settings")
             .update({ preferences })
-            .eq("user_id", b.id),
+            .eq("user_id", b.id)
+            .select("user_id")
+            .single(),
         );
     } else if (path === "account/delete") {
       if (body.confirmation !== "DELETE")
