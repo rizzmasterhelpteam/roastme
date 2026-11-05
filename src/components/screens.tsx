@@ -3525,65 +3525,31 @@ function Onboarding() {
   const router = useRouter();
   const [slide, setSlide] = useState(0);
   const items = [
-    {
-      title: "Your ego has met its match.",
-      desc: "Six unforgettable personalities. One very roastable you.",
-    },
-    {
-      title: "The group chat needs this.",
-      desc: "Turn your finest burns into cards worth sharing.",
-    },
-    {
-      title: "A little fire. Every day.",
-      desc: "Get 5 credits daily, refreshed at 00:00 UTC.",
-    },
+    { title: "Meet your", accent: "match.", desc: "Six personalities. Six ways to question your life choices.", label: "PICK YOUR ROASTER", icon: Flame, detail: "Savage, Grandma, CEO, Judgy Cat, Robot or Drama Queen. Find your kind of funny." },
+    { title: "Bring the", accent: "heat.", desc: "Roast a message, drop a photo or challenge an AI to a battle.", label: "MAKE IT YOURS", icon: Swords, detail: "Set the chaos. Choose your reply length. Save and share the best punchlines." },
+    { title: "Fresh fire.", accent: "Every day.", desc: "Start with 5 free daily credits. No card needed.", label: "YOUR DAILY DOSE", icon: Coins, detail: "Daily credits reset at 00:00 UTC. Unused daily credits don’t roll over." },
   ];
+  const current = items[slide];
+  const StepIcon = current.icon;
   return (
-    <div className="entry-card">
-      <Link href="/sign-in" className="skip-link">
-        Skip
-        <ArrowRight size={14} />
-      </Link>
-      <Portrait className="onboard-mascot" />
-      <div className="entry-brand">
-        ROAST ME <em>AI</em>
+    <div className="entry-card onboarding-card">
+      <Link href="/sign-in" className="skip-link">Skip <ArrowRight size={15} /></Link>
+      <div className="signin-hero" role="img" aria-label="Savage, the smiling flame mascot. Roast Me AI." />
+      <div className="onboarding-copy" aria-live="polite" aria-atomic="true">
+        <span className="onboarding-kicker">{current.label}</span>
+        <h1>{current.title} <em>{current.accent}</em></h1>
+        <p>{current.desc}</p>
+        <div className="onboarding-detail"><span className="onboarding-step-icon"><StepIcon size={22} /></span><p>{current.detail}</p></div>
       </div>
-      <span className="eyebrow">SAME JOKES. HIGHER STANDARDS.</span>
-      <h1>{items[slide].title}</h1>
-      <p>{items[slide].desc}</p>
-      <div className="onboard-features">
-        <span>
-          <Flame />
-          Six roast personalities
-        </span>
-        <span>
-          <ShieldCheck />
-          Playful, consensual humor
-        </span>
-        <span>
-          <Coins />
-          Free credits. Fresh daily.
-        </span>
+      <div className="onboarding-bottom">
+        <div className="carousel-dots" aria-label="Onboarding steps">
+          {items.map((_, i) => <button key={i} type="button" className={slide === i ? "active" : ""} onClick={() => setSlide(i)} aria-current={slide === i ? "step" : undefined} aria-label={`Step ${i + 1}: ${items[i].label}`} />)}
+        </div>
+        <Button className="wide onboarding-next" onClick={() => slide < 2 ? setSlide(slide + 1) : router.push("/sign-in")}>
+          {slide === 2 ? "Let’s get roasting" : "Continue"}<ArrowRight size={20} />
+        </Button>
+        <span className="onboarding-footnote"><ShieldCheck size={13} /> Playful roasts. Consenting adults. 18+.</span>
       </div>
-      <div className="carousel-dots">
-        {items.map((_, i) => (
-          <button
-            key={i}
-            className={slide === i ? "active" : ""}
-            onClick={() => setSlide(i)}
-            aria-label={`Onboarding slide ${i + 1}`}
-          />
-        ))}
-      </div>
-      <Button
-        className="wide"
-        onClick={() =>
-          slide < 2 ? setSlide(slide + 1) : router.push("/sign-in")
-        }
-      >
-        {slide === 2 ? "Let’s get roasted" : "Bring on the heat"}
-        <ArrowRight size={18} />
-      </Button>
     </div>
   );
 }
@@ -3596,11 +3562,8 @@ function SignIn({ link = false }: { link?: boolean }) {
   const { run, busy } = useAction();
   return (
     <div className="entry-card signin-card">
-      <Portrait className="onboard-mascot" />
-      <div className="entry-brand">
-        ROAST ME <em>AI</em>
-      </div>
-      <h1>{link ? "Keep every glorious burn." : "Let’s get roasting."}</h1>
+      <div className="signin-hero" role="img" aria-label="Savage, the smiling flame mascot. Roast Me AI." />
+      <h1>{link ? "Keep every glorious burn." : <>Let’s get <em>roasting.</em></>}</h1>
       <p>
         {link
           ? "Link your guest account to keep your credits, settings, and roast history."
@@ -3631,16 +3594,16 @@ function SignIn({ link = false }: { link?: boolean }) {
           disabled={busy || !acceptedTerms}
           onClick={() => void run(() => auth(link ? "google-link" : "google"))}
         >
-          <span className="google-g">G</span>
-          {link ? "Link with Google" : "Continue with Google"}
+          <span className="signin-button-icon"><img src="/google-mark.svg" alt="" width="24" height="24" /></span>
+          <span>{link ? "Link with Google" : "Continue with Google"}</span>
         </Button>
         <Button
           variant="outline"
           disabled={busy || !acceptedTerms}
           onClick={() => setEmailOpen(!emailOpen)}
         >
-          <Mail size={20} />
-          Continue with email
+          <span className="signin-button-icon"><Mail size={23} /></span>
+          <span>Continue with email</span>
         </Button>
         {emailOpen && (
           <form
@@ -3679,8 +3642,8 @@ function SignIn({ link = false }: { link?: boolean }) {
             })
           }
         >
-          <UserRound size={20} />
-          {link ? "Maybe later" : "Continue as guest"}
+          <span className="signin-button-icon"><UserRound size={24} /></span>
+          <span>{link ? "Maybe later" : "Continue as guest"}</span>
         </Button>
       </div>
     </div>

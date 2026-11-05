@@ -1,32 +1,25 @@
-# Dark palette verification
+# Sign-in design QA
 
 final result: passed
 
-Scope: apply the selected color scheme to existing dark mode; retain existing compact layouts and the separate ivory light theme.
+Scope: sign-in visual redesign against the user-supplied purple/pink reference. Existing authentication behavior retained.
 
-Source visual truth: C:/Users/rv941/AppData/Local/Temp/codex-clipboard-32f17da6-4fd5-4367-8dee-269cd80ce879.png
-Rendered implementation: work/dark-palette/phone.png, captured from the updated connected POCO after installDebug.
-Combined comparison: work/dark-palette/phone-comparison.png.
-Additional browser captures: work/dark-palette/chat.png, battle.png, settings.png, premium.png.
+Reviewed in the in-app browser at 393x852 and 360x640 CSS pixels, device scale 1, plus 1280x900 desktop. Reference is 941x1672 pixels; compared proportional regions rather than raw pixel counts. Screenshots are recorded in the chat tool output.
 
-## Findings
-No remaining P0/P1/P2 findings within the requested palette scope.
+- Artwork: uses the actual supplied mascot/brand region, clipped above the reference's UI. All consent and sign-in controls are live HTML.
+- Layout: hero, title, supporting copy, consent card, Google/email/guest controls appear in reference order. At 360x640, last control ends at y592; document width360, no horizontal overflow.
+- Typography: italic bold title with pink emphasis; supporting text and links remain readable. Persona branding uses supplied raster art.
+- Color: navy canvas, purple/pink lighting in supplied art, purple email control, pale Google control, outlined guest control.
+- Controls: consent unchecked by default and required; all three authentication buttons disabled until accepted. Focus outlines included. No real account creation or OAuth submission performed during visual QA.
+- Desktop: centered narrow sign-in composition; no horizontal overflow.
+- Accepted differences: native checkbox appearance and intentionally dimmed buttons before consent; exact glow/ribbon decoration differs from reference outside the supplied art. Existing dark branded sign-in treatment retained when app settings use light mode.
 
-- Colors: midnight navy app background, violet reply surfaces and outlines, lavender copy/icons, magenta heat/active navigation, gold credit balance and rose saved indicators match the selected direction. Borders and glows are restrained for the existing minimal design.
-- Typography: existing system sans-serif, readable near-white message text and lavender metadata retained. Existing font sizes and wrapping are intentional; this request changes colors.
-- Layout: existing compact reply toolbar, composer, account action and bottom navigation retained. Native screenshot shows all persistent controls visible. Browser Settings at 392px has no horizontal overflow.
-- Assets: existing Savage mascot and icon library retained, matching the reference; no replacement illustrations or fake device chrome.
-- Content: actual installed chat contains the same existing conversations as the reference. Browser demo conversation differs; this is expected test data.
-- States: Settings toggled dark to ivory and back, confirmed light background rgb(251,246,237). Browser inspected Chat, Battle, Settings and Premium. Browser error log empty.
-- Android: dark status/navigation colors updated to navy; blank black launch splash retained. Connected device installation succeeded and application launched.
+Validation: TypeScript check passed. Production native UI bundle built and synced to Android. No APK compiled or installed; real-device appearance not verified in this pass.
 
-## Implementation checklist
-- [x] Shared dark theme tokens and surfaces updated.
-- [x] Dark chat reference palette and controls applied.
-- [x] Separate light mode still selectable.
-- [x] Type check and native web asset build/sync passed.
-- [x] Gradle installDebug succeeded on connected device.
-- [x] Reference and installed app visually compared.
+## Onboarding follow-up
 
-## Follow-up polish
-Optional stronger glow would be closer to the reference; restrained glow is intentional for the previously requested minimalist design.
+final result: passed
+
+Matched onboarding to the approved sign-in aesthetic: shared supplied Savage artwork, navy canvas, purple/pink accents, concise step copy, framed feature detail and clear progression. Reviewed 360x640 CSS layout in the in-app browser. All three steps and primary action fit the screen. Verified Continue advances steps 1 to 2 to 3, and the final action opens /sign-in with consent still unchecked. No account creation performed. Existing hover/focus color feedback retained. Native build and type check passed; physical-phone appearance remains unverified.
+
+Artwork optimized to WebP (98,610 bytes), preserving the source artwork while reducing download and bundle size.
