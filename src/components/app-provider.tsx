@@ -297,7 +297,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         "Connect Supabase to enable Google and email sign-in. You can try the app as a guest.",
       );
     }
-    if (method === "password") {
+    if (method === "password" || method === "email") {
       const result = await sb.auth.signInWithPassword({ email: email!, password: password! });
       if (result.error) throw result.error;
       await api("premium/connect", {});
@@ -337,16 +337,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       return;
     }
-    const result = user?.is_anonymous
-      ? await sb.auth.updateUser({ email }, { emailRedirectTo: authRedirect() })
-      : await sb.auth.signInWithOtp({
-          email: email!,
-          options: { emailRedirectTo: authRedirect() },
-        });
-    if (result.error) throw result.error;
-    toast(
-      "Check your email for a secure sign-in link. Your guest data stays with this account.",
-    );
+    throw new Error("Choose Google, email and password, or guest sign-in.");
   };
   const signout = async () => {
     const sb = browserSupabase();

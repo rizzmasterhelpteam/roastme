@@ -1495,7 +1495,7 @@ html[data-theme="light"] .settings-language { background: #fbf6ed; color: #462c3
 
 /* Sign-in: supplied Savage artwork with live, accessible auth controls. */
 .entry-layout:has(.signin-card) { background: #09091e; padding: 0; min-height: 100dvh; align-items: center; }
-.signin-card.entry-card { width: 100%; max-width: 460px; min-height: 100dvh; padding: 0 30px 100px; border: 0; border-radius: 0; background: #09091e; box-shadow: none; overflow: hidden; color: #f8f4ff; display: flex; flex-direction: column; justify-content: flex-start; }
+.signin-card.entry-card { width: 100%; max-width: 460px; min-height: 100dvh; padding: 0 30px 28px; border: 0; border-radius: 0; background: #09091e; box-shadow: none; overflow: visible; color: #f8f4ff; display: flex; flex-direction: column; justify-content: flex-start; }
 .signin-hero { flex: none; width: calc(100% + 60px); margin: 0 -30px 10px; aspect-ratio: 941 / 565; background: url('/signin-art.webp') center top / 100% auto no-repeat; }
 .signin-card h1 { margin: 8px -12px 13px; font-size: clamp(27px, 7.2vw, 37px); font-weight: 850; font-style: italic; letter-spacing: -1.2px; line-height: 1.12; }
 .signin-card h1 em { color: #f23bd9; }
@@ -1516,7 +1516,6 @@ html[data-theme="light"] .settings-language { background: #fbf6ed; color: #462c3
 @media (max-height: 740px) { .signin-card.entry-card { padding-bottom: 22px; } .signin-hero { width: min(calc(100% + 60px), 330px); margin: 0 auto 2px; } .signin-card > p { margin-bottom: 16px; } .signin-card .signin-consent { margin-bottom: 16px; } .signin-card .auth-buttons { gap: 10px; } .signin-card .auth-buttons > button { min-height: 51px; } }
 [data-theme="light"] .entry-layout:has(.signin-card), [data-theme="light"] .signin-card.entry-card { background: #09091e; color: #f8f4ff; }
 
-.signin-card.entry-card::after { content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 65px; background: url('/signin-art.webp') center bottom / 100% auto no-repeat; pointer-events: none; }
 .signin-card .auth-buttons > button:disabled { opacity: .8; }
 @media (min-height: 741px) { .signin-card > p { max-width: 290px; } }
 
@@ -1546,10 +1545,9 @@ html[data-theme="light"] .settings-language { background: #fbf6ed; color: #462c3
 
 /* Blend the supplied artwork into the page instead of exposing image rectangles. */
 .signin-hero { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 9%, #000 96%, transparent); mask-image: linear-gradient(to bottom, transparent, #000 9%, #000 96%, transparent); }
-.signin-card.entry-card::after { height: auto; aspect-ratio: 941 / 130; -webkit-mask-image: linear-gradient(to bottom, transparent, #000 65%); mask-image: linear-gradient(to bottom, transparent, #000 65%); }
 .native-app .entry-layout:has(.signin-card) { padding: var(--safe-top, 0px) 0 var(--safe-bottom, 0px); }
 .native-app .signin-card.entry-card { min-height: calc(100dvh - var(--safe-top, 0px) - var(--safe-bottom, 0px)); }
-@media (max-height: 740px) { .signin-card.entry-card { padding-bottom: 85px; } }
+
 
 .premium-session-ended { position: fixed; inset: 0; z-index: 10001; display: grid; place-items: center; padding: 24px; background: var(--bg, #09091e); color: var(--text, #fff); }
 .premium-session-ended > div { max-width: 380px; text-align: center; }
@@ -1557,3 +1555,24 @@ html[data-theme="light"] .settings-language { background: #fbf6ed; color: #462c3
 .premium-session-ended p { color: var(--muted); line-height: 1.6; }
 .premium-session-ended button { display: block; width: 100%; margin-top: 12px; padding: 14px; border: 1px solid #a56ae2; border-radius: 16px; background: #7025ab; color: #fff; cursor: pointer; }
 .signin-card .password-mode-toggle { border: 0; background: transparent; color: #d4b2fa; text-decoration: underline; padding: 10px 0; cursor: pointer; }
+
+/* Sign-in must scroll inside Android's resized root, never behind a decoration. */
+.entry-layout:has(.signin-card) { display: block; background: #09091e; }
+.signin-card.entry-card { margin: 0 auto; }
+.signin-card.entry-card::after { content: none; display: none; }
+.signin-card .auth-buttons, .signin-card .signin-consent, .signin-card h1, .signin-card > p { flex-shrink: 0; }
+.signin-card .auth-buttons > button { flex-shrink: 0; }
+.signin-card .auth-buttons form { padding: 10px 0; gap: 10px; scroll-margin-bottom: 24px; }
+.signin-card .auth-buttons form input { min-height: 48px; width: 100%; padding: 12px 14px; border: 2px solid #594072; border-radius: 14px; background: #151129; color: #f7f0ff; box-shadow: none; outline: none; scroll-margin: 20px; }
+.signin-card .auth-buttons form input:focus, .signin-card .auth-buttons form input:focus-visible { border-color: #d5a0ff; outline: none; box-shadow: none; }
+.signin-card .auth-buttons form .btn { min-height: 48px; border-radius: 14px; margin-top: 3px; }
+.signin-card.email-open .signin-hero { width: min(calc(100% + 60px), 280px); margin: 0 auto 6px; }
+.native-app .entry-layout:has(.signin-card) { flex: 1 1 0%; height: 100%; max-height: 100%; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; padding: var(--safe-top, 0px) 0 var(--safe-bottom, 0px); scroll-padding-bottom: 24px; }
+.native-app .signin-card.entry-card { min-height: 100%; height: auto; max-height: none; padding-bottom: 28px; }
+.native-app.keyboard-open .signin-card .signin-hero { width: 190px; margin: 0 auto 4px; }
+.native-app.keyboard-open .signin-card h1 { font-size: 25px; margin-bottom: 8px; }
+.native-app.keyboard-open .signin-card > p { margin-bottom: 14px; }
+.native-app.keyboard-open .signin-card .signin-consent { margin-bottom: 14px; }
+
+.entry-layout:has(.signin-card) > .screen-root { height: auto !important; min-height: 100% !important; flex: none !important; overflow: visible !important; }
+.signin-card.entry-card { flex: none; height: auto; max-height: none; }

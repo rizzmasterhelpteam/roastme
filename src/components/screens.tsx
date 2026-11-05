@@ -3559,11 +3559,10 @@ function SignIn({ link = false }: { link?: boolean }) {
   const [email, setEmail] = useState(""),
     [emailOpen, setEmailOpen] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [passwordMode, setPasswordMode] = useState(false);
   const [password, setPassword] = useState("");
   const { run, busy } = useAction();
   return (
-    <div className="entry-card signin-card">
+    <div className={`entry-card signin-card${emailOpen ? " email-open" : ""}`}>
       <div className="signin-hero" role="img" aria-label="Savage, the smiling flame mascot. Roast Me AI." />
       <h1>{link ? "Keep every glorious burn." : <>Let’s get <em>roasting.</em></>}</h1>
       <p>
@@ -3601,20 +3600,22 @@ function SignIn({ link = false }: { link?: boolean }) {
         </Button>
         <Button
           variant="outline"
-          disabled={busy || !acceptedTerms}
+          disabled={busy}
+          aria-expanded={emailOpen}
+          aria-controls="email-password-form"
           onClick={() => setEmailOpen(!emailOpen)}
         >
           <span className="signin-button-icon"><Mail size={23} /></span>
           <span>Continue with email</span>
         </Button>
         {emailOpen && (
-          <form
+          <form id="email-password-form"
             onSubmit={(e) => {
               e.preventDefault();
               if (!acceptedTerms) return;
               void run(async () => {
-                await auth(passwordMode ? "password" : "email", email, password);
-                if (passwordMode) router.push("/");
+                await auth("password", email.trim(), password);
+                router.push("/");
               });
             }}
           >
@@ -3631,10 +3632,10 @@ function SignIn({ link = false }: { link?: boolean }) {
               placeholder="you@example.com"
               required
             />
-            {passwordMode && <><label htmlFor="signin-password" className="field-label">Password</label><input id="signin-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></>}
-            <button type="button" className="password-mode-toggle" onClick={() => setPasswordMode(!passwordMode)}>{passwordMode ? "Use an email link instead" : "Sign in with a password"}</button>
+            <label htmlFor="signin-password" className="field-label">Password</label>
+            <input id="signin-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" required />
             <Button className="wide" disabled={busy || !acceptedTerms}>
-              {passwordMode ? "Sign in" : "Send secure sign-in link"}
+              Sign in
               <ArrowRight size={17} />
             </Button>
           </form>
