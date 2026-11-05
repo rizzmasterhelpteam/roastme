@@ -1495,7 +1495,7 @@ html[data-theme="light"] .settings-language { background: #fbf6ed; color: #462c3
 
 /* Sign-in: supplied Savage artwork with live, accessible auth controls. */
 .entry-layout:has(.signin-card) { background: #09091e; padding: 0; min-height: 100dvh; align-items: center; }
-.signin-card.entry-card { width: 100%; max-width: 460px; min-height: min(100dvh, 850px); padding: 0 30px 36px; border: 0; border-radius: 0; background: #09091e; box-shadow: none; overflow: hidden; color: #f8f4ff; display: flex; flex-direction: column; justify-content: center; }
+.signin-card.entry-card { width: 100%; max-width: 460px; min-height: 100dvh; padding: 0 30px 100px; border: 0; border-radius: 0; background: #09091e; box-shadow: none; overflow: hidden; color: #f8f4ff; display: flex; flex-direction: column; justify-content: flex-start; }
 .signin-hero { flex: none; width: calc(100% + 60px); margin: 0 -30px 10px; aspect-ratio: 941 / 565; background: url('/signin-art.webp') center top / 100% auto no-repeat; }
 .signin-card h1 { margin: 8px -12px 13px; font-size: clamp(27px, 7.2vw, 37px); font-weight: 850; font-style: italic; letter-spacing: -1.2px; line-height: 1.12; }
 .signin-card h1 em { color: #f23bd9; }
@@ -1543,3 +1543,10 @@ html[data-theme="light"] .settings-language { background: #fbf6ed; color: #462c3
 .onboarding-card button:focus-visible,.onboarding-card a:focus-visible { outline: 3px solid #ee80ef; outline-offset: 3px; }
 @media (max-height:740px) { .onboarding-card.entry-card { padding-top: 10px; padding-bottom: 18px; } .onboarding-card .signin-hero { width: 280px; margin: -15px auto 6px; } .onboarding-card h1 { font-size: 29px; margin-top: 10px; } .onboarding-detail { min-height: 84px; padding: 12px; margin-top: 17px; margin-bottom: 8px; } .onboarding-card .carousel-dots { margin: 0 0 8px; } .onboarding-footnote { margin-top: 12px; } }
 
+
+/* Blend the supplied artwork into the page instead of exposing image rectangles. */
+.signin-hero { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 9%, #000 96%, transparent); mask-image: linear-gradient(to bottom, transparent, #000 9%, #000 96%, transparent); }
+.signin-card.entry-card::after { height: auto; aspect-ratio: 941 / 130; -webkit-mask-image: linear-gradient(to bottom, transparent, #000 65%); mask-image: linear-gradient(to bottom, transparent, #000 65%); }
+.native-app .entry-layout:has(.signin-card) { padding: var(--safe-top, 0px) 0 var(--safe-bottom, 0px); }
+.native-app .signin-card.entry-card { min-height: calc(100dvh - var(--safe-top, 0px) - var(--safe-bottom, 0px)); }
+@media (max-height: 740px) { .signin-card.entry-card { padding-bottom: 85px; } }
