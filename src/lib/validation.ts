@@ -24,18 +24,6 @@ export const reportReasons = [
   "Other",
 ];
 
-// This is an output guard. User wording is roast material, so profanity,
-// slang, insults, and quoted slurs are not blocked before generation.
-const highRiskPatterns = [
-  /\b(?:you should|you must|go|please)\s+(?:kill|hurt|harm)\s+yourself\b/i,
-  /\b(?:encourage|promote)\s+(?:suicide|self[- ]harm)\b/i,
-  /\b(?:csam|child\s*(?:porn|sexual\s*(?:abuse|exploitation))|sexual(?:ly)?\s+exploit(?:ing)?\s+(?:a\s+)?minor)\b/i,
-  /\b(?:how|ways?|instructions?|guide|steps?|help(?:\s+me)?)\b.{0,80}\b(?:make|build|buy|detonate)\b.{0,50}\b(?:bomb|explosive|weapon)\b/i,
-];
-
-export function isUnsafe(text: string) {
-  return highRiskPatterns.some((pattern) => pattern.test(text));
-}
 export function imageType(data: string) {
   const m = /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/.exec(
     data,
