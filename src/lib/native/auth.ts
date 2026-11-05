@@ -33,6 +33,11 @@ export async function consumeAuthLink(value: string) {
     if (error) throw error;
     const { Browser } = await import("@capacitor/browser");
     await Browser.close().catch(() => {});
+    const session = (await sb.auth.getSession()).data.session;
+    if (!session) throw new Error("Sign-in session is missing.");
+    const { nativeRequest } = await import("./client");
+    const connection = await nativeRequest("premium/connect", {}, session.access_token, session.user.id);
+    if (connection.status >= 400) throw new Error(connection.data.error || "Unable to connect this device.");
     window.dispatchEvent(new Event("roast:refresh"));
     return true;
   })();

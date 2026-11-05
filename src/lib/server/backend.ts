@@ -93,6 +93,17 @@ export async function backend(request: Request): Promise<Backend> {
   const { data, error } = await db.auth.getUser(token);
   if (error || !data.user)
     throw new ApiError("Your session has expired. Please sign in again.", 401);
+  const route = new URL(request.url).pathname;
+  if (!route.endsWith("/premium/connect") && !data.user.is_anonymous) {
+    const profile = await db.from("profiles").select("premium_status,premium_expires_at").eq("id", data.user.id).single();
+    if (profile.error) throw new ApiError("Unable to verify Premium access.", 503);
+    if (profile.data.premium_status && new Date(profile.data.premium_expires_at).getTime() > Date.now()) {
+      const current = await db.from("premium_sessions").select("instance_id").eq("user_id", data.user.id).maybeSingle();
+      if (current.error) throw new ApiError("Premium sessions are being configured. Please retry shortly.", 503);
+      if (!current.data || current.data.instance_id !== request.headers.get("x-roast-instance"))
+        throw new ApiError("PREMIUM_SESSION_REPLACED", 409);
+    }
+  }
   const reset = await db.rpc("reset_daily_credits", { p_user: data.user.id });
   if (reset.error)
     throw new ApiError("Could not refresh daily credits. Please retry.", 503);

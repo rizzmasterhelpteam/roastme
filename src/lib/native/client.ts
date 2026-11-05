@@ -1,3 +1,4 @@
+import { appInstanceId } from "@/lib/app-instance";
 import { apiOrigin, SecureSession } from "./platform";
 import { nativeDemo } from "./demo";
 
@@ -52,6 +53,7 @@ export async function nativeRequest(
       const res = await fetch(`${origin}/api/${route}`, {
         method: data ? "POST" : "GET",
         headers: {
+          "X-Roast-Instance": appInstanceId(),
           ...(data ? { "Content-Type": "application/json" } : {}),
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
@@ -113,13 +115,10 @@ export async function nativeRequest(
     const intent = await request("rewards/intent", {});
     if (intent.status !== 200) return intent;
     const { AdMob } = await import("@capacitor-community/admob");
-    let consent = await AdMob.requestConsentInfo();
-    if (consent.isConsentFormAvailable && !consent.canRequestAds)
-      consent = await AdMob.showConsentForm();
-    if (!consent.canRequestAds)
-      throw new Error(
-        "An ad can’t be shown right now. Your free credits reset at 00:00 UTC.",
-      );
+    const { refreshAdConsent } = await import("./consent");
+    const consent = await refreshAdConsent();
+    if (!consent?.canRequestAds)
+      throw new Error("An ad can’t be shown right now. Your free credits reset at 00:00 UTC.");
     await AdMob.initialize();
     await AdMob.prepareRewardVideoAd({
       adId,

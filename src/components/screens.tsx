@@ -3559,6 +3559,8 @@ function SignIn({ link = false }: { link?: boolean }) {
   const [email, setEmail] = useState(""),
     [emailOpen, setEmailOpen] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [passwordMode, setPasswordMode] = useState(false);
+  const [password, setPassword] = useState("");
   const { run, busy } = useAction();
   return (
     <div className="entry-card signin-card">
@@ -3610,7 +3612,10 @@ function SignIn({ link = false }: { link?: boolean }) {
             onSubmit={(e) => {
               e.preventDefault();
               if (!acceptedTerms) return;
-              void run(() => auth("email", email));
+              void run(async () => {
+                await auth(passwordMode ? "password" : "email", email, password);
+                if (passwordMode) router.push("/");
+              });
             }}
           >
             <label htmlFor="email" className="field-label">
@@ -3626,8 +3631,10 @@ function SignIn({ link = false }: { link?: boolean }) {
               placeholder="you@example.com"
               required
             />
+            {passwordMode && <><label htmlFor="signin-password" className="field-label">Password</label><input id="signin-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required /></>}
+            <button type="button" className="password-mode-toggle" onClick={() => setPasswordMode(!passwordMode)}>{passwordMode ? "Use an email link instead" : "Sign in with a password"}</button>
             <Button className="wide" disabled={busy || !acceptedTerms}>
-              Send secure sign-in link
+              {passwordMode ? "Sign in" : "Send secure sign-in link"}
               <ArrowRight size={17} />
             </Button>
           </form>
@@ -3991,9 +3998,8 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
               desc="Review your advertising consent"
               onClick={() =>
                 void run(async () => {
-                  const { AdMob } = await import("@capacitor-community/admob");
-                  await AdMob.requestConsentInfo();
-                  await AdMob.showPrivacyOptionsForm();
+                  const { openAdPrivacyChoices } = await import("@/lib/native/consent");
+                  await openAdPrivacyChoices();
                 })
               }
             />
@@ -4278,7 +4284,7 @@ function InfoPage({ kind }: { kind: string }) {
   );
 }
 function AuthCallback() {
-  const { reload, toast } = useApp();
+  const { api, reload, toast } = useApp();
   const router = useRouter();
   useEffect(() => {
     let alive = true;
@@ -4298,6 +4304,7 @@ function AuthCallback() {
         throw new Error(
           "No sign-in session was received. Please request a new link.",
         );
+      await api("premium/connect", {});
       await reload();
       if (alive) router.replace("/");
     })().catch((e) => {
@@ -4306,7 +4313,7 @@ function AuthCallback() {
     return () => {
       alive = false;
     };
-  }, [reload, router, toast]);
+  }, [api, reload, router, toast]);
   return (
     <div className="empty-state">
       <LoaderCircle className="spin" size={36} />

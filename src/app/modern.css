@@ -1550,3 +1550,10 @@ html[data-theme="light"] .settings-language { background: #fbf6ed; color: #462c3
 .native-app .entry-layout:has(.signin-card) { padding: var(--safe-top, 0px) 0 var(--safe-bottom, 0px); }
 .native-app .signin-card.entry-card { min-height: calc(100dvh - var(--safe-top, 0px) - var(--safe-bottom, 0px)); }
 @media (max-height: 740px) { .signin-card.entry-card { padding-bottom: 85px; } }
+
+.premium-session-ended { position: fixed; inset: 0; z-index: 10001; display: grid; place-items: center; padding: 24px; background: var(--bg, #09091e); color: var(--text, #fff); }
+.premium-session-ended > div { max-width: 380px; text-align: center; }
+.premium-session-ended h1 { font-size: 24px; line-height: 1.25; }
+.premium-session-ended p { color: var(--muted); line-height: 1.6; }
+.premium-session-ended button { display: block; width: 100%; margin-top: 12px; padding: 14px; border: 1px solid #a56ae2; border-radius: 16px; background: #7025ab; color: #fff; cursor: pointer; }
+.signin-card .password-mode-toggle { border: 0; background: transparent; color: #d4b2fa; text-decoration: underline; padding: 10px 0; cursor: pointer; }

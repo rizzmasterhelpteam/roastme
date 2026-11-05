@@ -8,6 +8,7 @@ import {
   useRef,
 } from "react";
 import { defaultState, levelFromChaos, type AppState } from "@/lib/personas";
+import { appInstanceId } from "@/lib/app-instance";
 import { browserSupabase } from "@/lib/supabase";
 import { isNative, authRedirect } from "@/lib/native/platform";
 import { clickFeedback, playSound, unlockAudio } from "@/lib/feedback";
@@ -34,7 +35,7 @@ type Context = {
   replyLength: "short" | "medium" | "long";
   setReplyLength: (value: "short" | "medium" | "long") => void;
   setChaos: (n: number) => void;
-  auth: (method: string, email?: string) => Promise<void>;
+  auth: (method: string, email?: string, password?: string) => Promise<void>;
   signout: () => Promise<void>;
   awardCredits: (n: number) => void;
 };
@@ -45,6 +46,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [ready, setReady] = useState(false),
     [notice, setNotice] = useState(""),
     [startupError, setStartupError] = useState(""),
+    [sessionReplaced, setSessionReplaced] = useState(false),
     [level, setLevel] = useState("Light"),
     [replyLength, setReplyLength] = useState<"short" | "medium" | "long">(
       "medium",
@@ -115,6 +117,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .catch(() => {});
     }
   }, [state.settings.dark]);
+  useEffect(() => {
+    if (!ready || !isNative() || state.premium) return;
+    // Update UMP once per launch, before any ad SDK initialization or ad request.
+    void import("@/lib/native/consent").then(({ refreshAdConsent }) => refreshAdConsent()).catch(() => {});
+  }, [ready, state.premium]);
   const awardCredits = useCallback((n: number) => {
     setState((prev) => ({ ...prev, credits: prev.credits + n }));
   }, []);
@@ -143,12 +150,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         session?.access_token,
         session?.user.id,
       );
+      if (data.error === "PREMIUM_SESSION_REPLACED") setSessionReplaced(true);
       if (status >= 400)
         throw new ClientError(
           data.error || "Please try again.",
           data.blocked,
           status === 402,
         );
+      if (path === "premium/connect") setSessionReplaced(false);
       if (data.state) setState(data.state);
       else if (path === "state") setState(data);
       replyFeedback();
@@ -157,18 +166,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const res = await fetch(`/api/${path}`, {
       method: body ? "POST" : "GET",
       headers: {
+        "X-Roast-Instance": appInstanceId(),
         ...(body ? { "Content-Type": "application/json" } : {}),
         ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
       },
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
     const data = await res.json();
+    if (data.error === "PREMIUM_SESSION_REPLACED") setSessionReplaced(true);
     if (!res.ok)
       throw new ClientError(
         data.error || "Something went wrong.",
         data.blocked,
         res.status === 402,
       );
+    if (path === "premium/connect") setSessionReplaced(false);
     if (data.state) setState(data.state);
     else if (path === "state") setState(data);
     replyFeedback();
@@ -189,6 +201,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             if (result.error) throw result.error;
           }
         }
+        await api("premium/connect", {});
         await api("state");
         if (mounted) setReady(true);
       } catch (e) {
@@ -232,7 +245,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("roast:notice", showNotice);
     window.addEventListener("roast:active", active);
     const subscription = sb?.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "USER_UPDATED")
+      if (event === "USER_UPDATED")
         setTimeout(() => void reload().catch(() => {}), 0);
     });
     try {
@@ -266,7 +279,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const timer = setTimeout(() => setNotice(""), 5000);
     return () => clearTimeout(timer);
   }, [notice]);
-  const auth = async (method: string, email?: string) => {
+  useEffect(() => {
+    if (!ready || !state.premium || sessionReplaced) return;
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void api("premium/status").catch(() => {});
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [ready, state.premium, sessionReplaced, api]);
+  const auth = async (method: string, email?: string, password?: string) => {
     const sb = browserSupabase();
     if (!sb) {
       if (method === "guest") {
@@ -276,6 +296,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       throw new Error(
         "Connect Supabase to enable Google and email sign-in. You can try the app as a guest.",
       );
+    }
+    if (method === "password") {
+      const result = await sb.auth.signInWithPassword({ email: email!, password: password! });
+      if (result.error) throw result.error;
+      await api("premium/connect", {});
+      await reload();
+      return;
     }
     const user = (await sb.auth.getUser()).data.user;
     if (method === "guest") {
@@ -324,7 +351,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const signout = async () => {
     const sb = browserSupabase();
     if (sb) {
-      const { error } = await sb.auth.signOut();
+      const { error } = await sb.auth.signOut({ scope: "local" });
       if (error) throw error;
     }
     location.href = "/sign-in";
@@ -348,7 +375,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         awardCredits,
       }}
     >
-      {isNative() && !ready ? (
+      {sessionReplaced ? (
+        <main className="premium-session-ended" role="alert">
+          <div>
+            <h1>Premium opened somewhere else</h1>
+            <p>This session has stopped because your account was opened on another device or tab.</p>
+            <button type="button" onClick={() => void api("premium/connect", {}).then(reload).then(() => setSessionReplaced(false)).catch((e) => toast(e.message))}>Use Premium here</button>
+            <p>You can close this tab or app, or move Premium back here.</p>
+          </div>
+        </main>
+      ) : isNative() && !ready ? (
         <div
           aria-busy={!startupError}
           aria-label="Loading your account"

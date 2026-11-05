@@ -25,6 +25,8 @@ async function handle(
     }
     const b = await backend(request);
     if (request.method === "GET" && path === "billing/status") {
+      if (!b.demo && b.user.is_anonymous)
+        throw new ApiError("Sign in to an account before purchasing Premium.", 401);
       if (b.demo || !process.env.REVENUECAT_SECRET_KEY)
         throw new ApiError(
           "Subscriptions are not configured yet. No payment was taken.",
@@ -51,6 +53,8 @@ async function handle(
         verified: row.data?.verification_status === "verified",
       });
     }
+    if (request.method === "GET" && path === "premium/status")
+      return NextResponse.json({ connected: true });
     if (request.method === "GET" && path === "state")
       return NextResponse.json(await getState(b), {
         headers: { "Cache-Control": "no-store" },
@@ -59,6 +63,13 @@ async function handle(
     const raw = await request.text();
     if (raw.length > 7600000) throw new ApiError("Request is too large.", 413);
     const body = JSON.parse(raw || "{}");
+    if (path === "premium/connect") {
+      if (!b.demo && !b.user.is_anonymous) {
+        const instance = z.string().uuid().parse(request.headers.get("x-roast-instance"));
+        ensure(await b.db.rpc("connect_premium_session", { p_user: b.id, p_instance: instance }));
+      }
+      return NextResponse.json({ connected: true });
+    }
     if (path === "billing/sync") {
       if (b.demo)
         throw new ApiError("Subscriptions are not configured yet.", 503);

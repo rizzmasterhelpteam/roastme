@@ -17,7 +17,7 @@ export function corsHeaders(request: Request) {
   if (origin && isAllowedOrigin(request)) {
     headers.set("Access-Control-Allow-Origin", origin);
     headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Roast-Instance");
     headers.set("Access-Control-Max-Age", "600");
   }
   return headers;
