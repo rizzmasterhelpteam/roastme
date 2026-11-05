@@ -37,7 +37,8 @@ async function openai(
         max_completion_tokens: 2048,
         // Luna with reasoning enabled does not support temperature.
         // Chaos remains controlled by the existing persona instructions.
-        reasoning_effort: "low",
+        // Roast generation uses medium reasoning; JSON safety checks stay on low.
+        reasoning_effort: json ? "low" : "medium",
         store: false,
         ...(json ? { response_format: { type: "json_object" } } : {}),
       }),
