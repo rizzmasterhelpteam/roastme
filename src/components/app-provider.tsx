@@ -44,6 +44,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState(defaultState),
     [ready, setReady] = useState(false),
     [notice, setNotice] = useState(""),
+    [startupError, setStartupError] = useState(""),
     [level, setLevel] = useState("Light"),
     [replyLength, setReplyLength] = useState<"short" | "medium" | "long">(
       "medium",
@@ -189,11 +190,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }
         }
         await api("state");
-      } catch (e) {
-        if (mounted)
-          toast(e instanceof Error ? e.message : "Unable to load account.");
-      } finally {
         if (mounted) setReady(true);
+      } catch (e) {
+        if (mounted) {
+          const message = e instanceof Error ? e.message : "Unable to load account.";
+          if (isNative()) setStartupError(message);
+          else {
+            toast(message);
+            setReady(true);
+          }
+        }
       }
     }
     void init();
@@ -342,7 +348,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         awardCredits,
       }}
     >
-      {children}
+      {isNative() && !ready ? (
+        <div
+          aria-busy={!startupError}
+          aria-label="Loading your account"
+          style={{ position: "fixed", inset: 0, background: "#000", color: "#fff", zIndex: 10000, display: "grid", placeItems: "center", padding: 24 }}
+        >
+          {startupError && (
+            <div role="alert" style={{ maxWidth: 320, textAlign: "center" }}>
+              <p>Unable to open your account.</p>
+              <p>{startupError}</p>
+              <button type="button" onClick={() => window.location.reload()}>Try again</button>
+            </div>
+          )}
+        </div>
+      ) : children}
       {notice && (
         <div className="toast" role="status">
           {notice}
