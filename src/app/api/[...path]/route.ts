@@ -3,7 +3,13 @@ import { z } from "zod";
 import { randomUUID } from "crypto";
 import { backend, getState, ensure, ApiError } from "@/lib/server/backend";
 import { InputBudgetError } from "@/lib/server/token-budget";
-import { generate, demoRoast, SafetyError, TextProviderError } from "@/lib/server/providers";
+import { loadConversationMemory } from "@/lib/server/memory-store";
+import {
+  generate,
+  demoRoast,
+  SafetyError,
+  TextProviderError,
+} from "@/lib/server/providers";
 import { generationSchema, imageType, reportReasons } from "@/lib/validation";
 import { levelFromChaos, type Roast } from "@/lib/personas";
 import { replyLanguages } from "@/lib/languages";
@@ -27,7 +33,10 @@ async function handle(
     const b = await backend(request);
     if (request.method === "GET" && path === "billing/status") {
       if (!b.demo && b.user.is_anonymous)
-        throw new ApiError("Sign in to an account before purchasing Premium.", 401);
+        throw new ApiError(
+          "Sign in to an account before purchasing Premium.",
+          401,
+        );
       if (b.demo || !process.env.REVENUECAT_SECRET_KEY)
         throw new ApiError(
           "Subscriptions are not configured yet. No payment was taken.",
@@ -66,10 +75,29 @@ async function handle(
     const body = JSON.parse(raw || "{}");
     if (path === "premium/connect") {
       if (!b.demo && !b.user.is_anonymous) {
-        const instance = z.string().uuid().parse(request.headers.get("x-roast-instance"));
-        ensure(await b.db.rpc("connect_premium_session", { p_user: b.id, p_instance: instance }));
+        const instance = z
+          .string()
+          .uuid()
+          .parse(request.headers.get("x-roast-instance"));
+        ensure(
+          await b.db.rpc("connect_premium_session", {
+            p_user: b.id,
+            p_instance: instance,
+          }),
+        );
       }
       return NextResponse.json({ connected: true });
+    }
+    if (path === "memory/clear") {
+      const sessionId = z.string().uuid().parse(body.sessionId);
+      if (!b.demo)
+        ensure(
+          await b.db.rpc("clear_conversation_memory", {
+            p_user: b.id,
+            p_session: sessionId,
+          }),
+        );
+      return NextResponse.json({ cleared: true });
     }
     if (path === "billing/sync") {
       if (b.demo)
@@ -82,7 +110,8 @@ async function handle(
         throw new ApiError("Rewarded ads are not configured yet.", 503);
       const state = await getState(b);
       if (state.premium) throw new ApiError("Premium members don’t need ads.");
-      if (state.credits > 0) throw new ApiError("Use your remaining credits before watching an ad.");
+      if (state.credits > 0)
+        throw new ApiError("Use your remaining credits before watching an ad.");
       const intent = ensure(
         await b.db.rpc("create_ad_intent", { p_user: b.id }),
       );
@@ -92,11 +121,13 @@ async function handle(
       if (b.demo || !process.env.ADMOB_REWARDED_AD_UNIT)
         throw new ApiError("Rewarded ads are not configured yet.", 503);
       const intentId = z.string().uuid().parse(body.intentId);
-      ensure(await b.db.rpc("grant_verified_ad", {
-        p_user: b.id,
-        p_intent: intentId,
-        p_event: `client:${intentId}`,
-      }));
+      ensure(
+        await b.db.rpc("grant_verified_ad", {
+          p_user: b.id,
+          p_intent: intentId,
+          p_event: `client:${intentId}`,
+        }),
+      );
       return NextResponse.json({ state: await getState(b) });
     }
     if (path === "roast") {
@@ -178,6 +209,14 @@ async function handle(
       let committed = false;
       try {
         let context: { prompt: string; content: string }[] = [];
+        const memory = await loadConversationMemory(
+          b.db,
+          b.id,
+          !b.user.is_anonymous,
+          input.sessionId,
+          input.persona,
+          input.memory,
+        );
         if (input.sessionId) {
           const recent = ensure(
             await b.db
@@ -192,7 +231,7 @@ async function handle(
           );
           context = (recent.data || []).reverse();
         }
-        const content = await generate(input, context);
+        const { content, notes } = await generate(input, context, memory.notes);
         if (input.type === "image") {
           const image = imageType(input.image!);
           path = `${b.id}/${randomUUID()}.${image.mime.split("/")[1]}`;
@@ -212,7 +251,7 @@ async function handle(
           );
         }
         const done = ensure(
-          await b.db.rpc("finish_generation", {
+          await b.db.rpc("finish_generation_with_memory", {
             p_user: b.id,
             p_token: token,
             p_request: input.requestId,
@@ -224,6 +263,9 @@ async function handle(
             p_prompt: input.prompt,
             p_content: content,
             p_image: path,
+            p_notes: input.sessionId ? notes : null,
+            p_revision: memory.revision,
+            p_persist: !b.user.is_anonymous,
           }),
         );
         committed = true;
@@ -231,6 +273,15 @@ async function handle(
         return NextResponse.json({
           roast: state.history.find((r) => r.id === done.data),
           state,
+          ...(input.sessionId && b.user.is_anonymous
+            ? {
+                memory: {
+                  notes,
+                  sourceId: done.data,
+                  revision: memory.revision,
+                },
+              }
+            : {}),
         });
       } finally {
         if (!committed) {

@@ -33,6 +33,7 @@ async function perform(path: string, body?: Record<string, unknown>) {
   });
   let roast: Roast | undefined;
   if (path === "state") return { status: 200, data: record.state };
+  if (path === "memory/clear") return { status: 200, data: { cleared: true } };
   if (path === "roast") {
     const parsed = generationSchema.safeParse(body);
     if (!parsed.success)

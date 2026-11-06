@@ -578,7 +578,13 @@ function InstaChatScreen({
     busy,
   ]);
 
-  function startNewChat() {
+  async function startNewChat() {
+    try {
+      if (sessionId) await api("memory/clear", { sessionId, persona: selected });
+    } catch (error) {
+      toast(error instanceof Error ? error.message : "Unable to reset the chat. Please retry.");
+      return;
+    }
     setNewChatConfirmOpen(false);
     const nextSession = crypto.randomUUID();
     try {

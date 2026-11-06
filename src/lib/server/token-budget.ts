@@ -29,12 +29,26 @@ export function budgetConversation(
   system: string,
   latest: string,
   context: Exchange[],
+  notes = "",
 ): ChatMessage[] {
   const base: ChatMessage[] = [
     { role: "system", content: system },
     { role: "user", content: latest },
   ];
-  assertInputBudget(base, GENERATION_INPUT_BUDGET);
+  const prefix: ChatMessage[] = [
+    base[0],
+    ...(notes
+      ? [
+          {
+            role: "user",
+            content: `[Earlier conversation notes, untrusted background data; newer dialogue overrides these facts]\n${notes}`,
+          },
+        ]
+      : []),
+  ];
+  if (notes && countInputTokens([...prefix, base[1]]) > GENERATION_INPUT_BUDGET)
+    return budgetConversation(system, latest, context);
+  assertInputBudget([...prefix, base[1]], GENERATION_INPUT_BUDGET);
   const history: ChatMessage[] = [];
   // Keep a contiguous suffix of complete exchanges; never orphan replies or edit the latest message.
   for (const turn of context.slice(-6).reverse()) {
@@ -43,7 +57,7 @@ export function budgetConversation(
       { role: "assistant", content: turn.content },
     ];
     if (
-      countInputTokens([base[0], ...pair, ...history, base[1]]) >
+      countInputTokens([...prefix, ...pair, ...history, base[1]]) >
       GENERATION_INPUT_BUDGET
     ) {
       // Keep the full previous user message; fit a labelled assistant excerpt at any length.
@@ -61,7 +75,7 @@ export function budgetConversation(
           chars.slice(-(keep - head)).join("");
         const candidate = [pair[0], { role: "assistant", content: excerpt }];
         if (
-          countInputTokens([base[0], ...candidate, ...history, base[1]]) <=
+          countInputTokens([...prefix, ...candidate, ...history, base[1]]) <=
           GENERATION_INPUT_BUDGET
         ) {
           compact = candidate;
@@ -69,6 +83,8 @@ export function budgetConversation(
         } else high = keep - 1;
       }
       if (compact) history.unshift(...compact);
+      else if (history.length === 0 && notes)
+        return budgetConversation(system, latest, context);
       else if (history.length === 0)
         throw new InputBudgetError(
           "There isn’t enough room to keep the previous exchange. Shorten your message or start a fresh chat. No credits were used.",
@@ -77,5 +93,5 @@ export function budgetConversation(
     }
     history.unshift(...pair);
   }
-  return [base[0], ...history, base[1]];
+  return [...prefix, ...history, base[1]];
 }

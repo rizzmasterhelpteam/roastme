@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { replyLanguages } from "./languages";
+import { conversationMemorySchema } from "./conversation-memory";
 export const generationSchema = z.object({
   prompt: z.string().trim().min(2).max(1500),
   persona: z.enum(["savage", "grandma", "ceo", "cat", "robot", "drama"]),
@@ -14,6 +15,7 @@ export const generationSchema = z.object({
   image: z.string().max(7200000).optional(),
   requestId: z.string().uuid(),
   sessionId: z.string().uuid().optional(),
+  memory: conversationMemorySchema.optional(),
 });
 export const reportReasons = [
   "Hateful or discriminatory content",

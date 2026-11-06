@@ -1,6 +1,7 @@
 import { findPersona } from "@/lib/personas";
 import { buildRoastSystem } from "./roast-prompt";
 import { budgetConversation, type Exchange } from "./token-budget";
+import { compactNotes, memoryInstruction } from "./conversation-memory";
 import type { generationSchema } from "@/lib/validation";
 import type { z } from "zod";
 
@@ -8,6 +9,8 @@ export function buildGenerationMessages(
   input: z.infer<typeof generationSchema>,
   context: Exchange[],
   visualDescription?: string,
+  notes?: string,
+  remember = false,
 ) {
   let system = buildRoastSystem(input);
   let latest = input.prompt;
@@ -25,5 +28,6 @@ export function buildGenerationMessages(
       other = findPersona(input.opponent || "cat");
     system += ` Create a playful six-line roast battle between fictional ${persona.name} and ${other.name}. ${other.name}'s style: ${other.prompt}. Continue the established topic through one shared comic premise and call-and-response. Each line answers the previous line; the last resolves the bit. Alternate speakers with name prefixes. Only roast these fictional personas, not real people.`;
   }
-  return budgetConversation(system, latest, context);
+  if (remember) system += memoryInstruction;
+  return budgetConversation(system, latest, context, compactNotes(notes));
 }

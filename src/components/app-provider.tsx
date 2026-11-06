@@ -9,6 +9,7 @@ import {
 } from "react";
 import { defaultState, levelFromChaos, type AppState } from "@/lib/personas";
 import { appInstanceId } from "@/lib/app-instance";
+import { localConversationMemory } from "@/lib/conversation-memory";
 import { browserSupabase } from "@/lib/supabase";
 import { isNative, authRedirect } from "@/lib/native/platform";
 import { clickFeedback, playSound, unlockAudio } from "@/lib/feedback";
@@ -142,6 +143,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     const sb = browserSupabase();
     const session = sb ? (await sb.auth.getSession()).data.session : null;
+    const account = session?.user.id;
+    let memoryStore: ReturnType<typeof localConversationMemory> | undefined;
+    try { memoryStore = localConversationMemory(window.localStorage); } catch {}
+    const chat = typeof body?.sessionId === "string" ? body.sessionId : undefined;
+    const persona = typeof body?.persona === "string" ? body.persona : undefined;
+    if (path === "roast" && body && account && chat && persona) {
+      // Also permits an anonymous identity upgraded in place to import its own notes.
+      const memory = memoryStore?.get(account, chat, persona);
+      if (memory) body = { ...body, memory };
+    }
+    const rememberResult = (data: ApiResult) => {
+      if (!account) return;
+      if (path === "roast" && chat && persona && data.roast) {
+        if (session?.user.is_anonymous) {
+          if (data.memory) memoryStore?.set(account, chat, persona, data.memory);
+        } else memoryStore?.clear(account, chat, persona);
+      }
+      if (path === "memory/clear" && chat && persona) memoryStore?.clear(account, chat, persona);
+      if (path === "history/delete" || path === "account/delete") memoryStore?.clear(account);
+    };
     if (isNative()) {
       const { nativeRequest } = await import("@/lib/native/client");
       const { status, data } = await nativeRequest(
@@ -161,6 +182,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (data.state) setState(data.state);
       else if (path === "state") setState(data);
       replyFeedback();
+      rememberResult(data);
       return data as ApiResult;
     }
     const res = await fetch(`/api/${path}`, {
@@ -184,6 +206,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (data.state) setState(data.state);
     else if (path === "state") setState(data);
     replyFeedback();
+    rememberResult(data);
     return data as ApiResult;
   }, []);
   const reload = useCallback(async () => {
@@ -342,8 +365,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const signout = async () => {
     const sb = browserSupabase();
     if (sb) {
+      const account = (await sb.auth.getSession()).data.session?.user.id;
       const { error } = await sb.auth.signOut({ scope: "local" });
       if (error) throw error;
+      if (account) try { localConversationMemory(window.localStorage).clear(account); } catch {}
     }
     location.href = "/sign-in";
   };
