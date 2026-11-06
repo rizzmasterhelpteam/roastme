@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { randomUUID } from "crypto";
 import { backend, getState, ensure, ApiError } from "@/lib/server/backend";
+import { InputBudgetError } from "@/lib/server/token-budget";
 import { generate, demoRoast, SafetyError, TextProviderError } from "@/lib/server/providers";
 import { generationSchema, imageType, reportReasons } from "@/lib/validation";
 import { levelFromChaos, type Roast } from "@/lib/personas";
@@ -410,6 +411,8 @@ async function handle(
     } else throw new ApiError("Not found", 404);
     return NextResponse.json({ state: await getState(b) });
   } catch (error) {
+    if (error instanceof InputBudgetError)
+      return NextResponse.json({ error: error.message }, { status: 400 });
     if (error instanceof TextProviderError)
       return NextResponse.json({ error: error.message }, { status: 503 });
     if (error instanceof SafetyError)
