@@ -226,7 +226,7 @@ export async function generate(
           role: "system",
           content:
             replySystem +
-            ` Create a playful six-line roast battle between the fictional personas ${persona.name} and ${other.name}. ${other.name}'s style: ${other.prompt}. Alternate speakers, prefix each line with their name and a colon. Only roast these fictional personas, not real people.`,
+            ` Create a playful six-line roast battle between the fictional personas ${persona.name} and ${other.name}. ${other.name}'s style: ${other.prompt}. Develop one shared comic premise through call-and-response; each line answers the previous line, and the last line resolves the bit. Alternate speakers, prefix each line with their name and a colon. Only roast these fictional personas, not real people.`,
         },
         { role: "user", content: input.prompt },
       ],

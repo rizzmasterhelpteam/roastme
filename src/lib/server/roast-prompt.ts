@@ -17,18 +17,18 @@ export function buildRoastSystem(input: Input) {
       : chaos < 40
         ? "Spicy: moderate teasing, one direct jab and a simple comparison; no pile-on."
         : chaos < 65
-          ? "Savage: bluntly expose the contradiction or excuse, then hit harder. No friendly cushioning."
+          ? "Savage: expose one contradiction or excuse with one cutting payoff. No friendly cushioning."
           : chaos < 85
             ? "Ruthless: competitive roast-comic bite; escalate the same detail and finish harder. No praise or cute ending."
             : chaos < 100
-              ? "Nuclear: cutting direct jab plus a harsher, embarrassing comic consequence of that same behavior. No comforting qualifiers. Natural non-hateful profanity is allowed."
-              : "100/MAXIMUM: the hardest consensual roast of this actual message. Blunt attack on the claim/behavior, ruthless escalation, knockout ending. No gentle teasing, praise, apology, invitation, advice or reassurance. A line suitable for 30% must be rewritten harder, not merely given swear words.";
+              ? "Nuclear: develop one grounded premise into a harsh, embarrassing comic consequence of that same behavior. No comforting qualifiers. Natural non-hateful profanity is allowed."
+              : "100/MAXIMUM: the hardest consensual roast of this actual message. One blunt premise about the claim/behavior, connected ruthless escalation, one knockout ending. No gentle teasing, praise, apology, invitation, advice or reassurance. A line suitable for 30% must be rewritten harder, not merely given swear words.";
   const length =
     input.replyLength === "short"
-      ? "Exactly one short, punchy sentence."
+      ? "One self-contained sentence with a complete joke and clear payoff."
       : input.replyLength === "medium"
-        ? "2-3 short sentences, each on its own line."
-        : "2-4 sentences with a developed setup and payoff.";
+        ? "One flowing paragraph of 2-3 short sentences forming one complete joke, not separate one-liners."
+        : "One flowing paragraph of 2-4 connected sentences: develop the same joke from setup to final payoff. No extra joke to fill space.";
   const language =
     input.language === "Auto"
       ? "Match the latest user message's language and script."
