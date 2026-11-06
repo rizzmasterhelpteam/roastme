@@ -262,8 +262,26 @@ test("database notes commit with credits, reject guests/client access, and inval
     );
     await db.exec("reset role");
     // Deleting an account cascades its summaries as well as its conversation data.
-    await finish(owner, randomUUID(), "Account-scoped test.");
+    const newest = await finish(owner, randomUUID(), "Account-scoped test.");
+    const older = await db.query<{ id: string }>(
+      "select id from public.messages where user_id=$1 and id<>$2 limit 1",
+      [owner, newest.rows[0].id],
+    );
+    await db.exec(
+      "create role supabase_auth_admin bypassrls; grant usage on schema auth to supabase_auth_admin; grant select(id),delete on auth.users to supabase_auth_admin; grant select(id),delete on public.messages to supabase_auth_admin; set role supabase_auth_admin",
+    );
+    // Supabase's FK cleanup can invoke AFTER triggers at depth one. Exercise that
+    // restricted-role path directly as well as the parent cascade below.
+    assert.equal(
+      (
+        await db.query("delete from public.messages where id=$1 returning id", [
+          older.rows[0].id,
+        ])
+      ).rows.length,
+      1,
+    );
     await db.query("delete from auth.users where id=$1", [owner]);
+    await db.exec("reset role");
     assert.equal(
       (
         await db.query(
