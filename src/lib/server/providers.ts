@@ -1,4 +1,5 @@
 import "server-only";
+import { normalizeRoastPunctuation } from "@/lib/roast-text";
 import { conversationGuidance } from "./conversation-guidance";
 import { findPersona, levelFromChaos } from "@/lib/personas";
 import {
@@ -259,6 +260,7 @@ export async function generate(
   if (!content.trim()) throw new Error("No roast came back. Please try again.");
   if (/^REFUSED[.!\s]*$/i.test(content.trim()) || isImplementationResponse(content))
     throw new SafetyError();
+  content = normalizeRoastPunctuation(content);
   await moderate(content, "output");
   return content;
 }
