@@ -185,7 +185,9 @@ async function handle(
               .select("prompt,content")
               .eq("user_id", b.id)
               .eq("session_id", input.sessionId)
+              .eq("persona", input.persona)
               .order("created_at", { ascending: false })
+              .order("id", { ascending: false })
               .limit(6),
           );
           context = (recent.data || []).reverse();

@@ -6,10 +6,10 @@ export const GENERATION_INPUT_BUDGET = 2200;
 export const SAFETY_INPUT_BUDGET = 800;
 export const TEXT_INPUT_BUDGET = GENERATION_INPUT_BUDGET + SAFETY_INPUT_BUDGET;
 export class InputBudgetError extends Error {
-  constructor() {
-    super(
-      "This message is too long for a roast. Shorten it and try again. No credits were used.",
-    );
+  constructor(
+    message = "This message is too long for a roast. Shorten it and try again. No credits were used.",
+  ) {
+    super(message);
   }
 }
 export function countInputTokens(messages: ChatMessage[]) {
@@ -46,20 +46,33 @@ export function budgetConversation(
       countInputTokens([base[0], ...pair, ...history, base[1]]) >
       GENERATION_INPUT_BUDGET
     ) {
-      // Preserve the newest user statement even when its old assistant reply was unusually long.
+      // Keep the full previous user message; fit a labelled assistant excerpt at any length.
       const chars = Array.from(turn.content);
-      if (chars.length > 500) {
+      const marker = "\n[Earlier reply excerpt; middle omitted]\n";
+      let compact: ChatMessage[] | undefined;
+      let low = 64,
+        high = chars.length - 1;
+      while (low <= high) {
+        const keep = Math.floor((low + high) / 2);
+        const head = Math.ceil(keep * 0.6);
         const excerpt =
-          chars.slice(0, 300).join("") +
-          "\n[Earlier reply excerpt; middle omitted]\n" +
-          chars.slice(-200).join("");
-        const compact = [pair[0], { role: "assistant", content: excerpt }];
+          chars.slice(0, head).join("") +
+          marker +
+          chars.slice(-(keep - head)).join("");
+        const candidate = [pair[0], { role: "assistant", content: excerpt }];
         if (
-          countInputTokens([base[0], ...compact, ...history, base[1]]) <=
+          countInputTokens([base[0], ...candidate, ...history, base[1]]) <=
           GENERATION_INPUT_BUDGET
-        )
-          history.unshift(...compact);
+        ) {
+          compact = candidate;
+          low = keep + 1;
+        } else high = keep - 1;
       }
+      if (compact) history.unshift(...compact);
+      else if (history.length === 0)
+        throw new InputBudgetError(
+          "There isn’t enough room to keep the previous exchange. Shorten your message or start a fresh chat. No credits were used.",
+        );
       break;
     }
     history.unshift(...pair);

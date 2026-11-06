@@ -156,6 +156,7 @@ export async function getState(b: Backend): Promise<AppState> {
     }),
   );
   return {
+    accountId: b.id,
     credits: profile.data.credits_balance,
     premium:
       profile.data.premium_status &&

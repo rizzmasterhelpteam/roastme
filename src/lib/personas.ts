@@ -126,6 +126,7 @@ export type Roast = {
   session_id?: string;
 };
 export type AppState = {
+  accountId?: string;
   credits: number;
   premium: boolean;
   email: string | null;

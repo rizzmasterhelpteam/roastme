@@ -524,10 +524,19 @@ function InstaChatScreen({
     )?.session_id;
     let stored: string | null = null;
     try {
-      stored = sessionStorage.getItem(`roast-session:${selected}`);
-    } catch {}
-    setSessionId(stored || latestSession || crypto.randomUUID());
-  }, [ready, selected]);
+      const key = `roast-session:${state.accountId || state.email || "guest"}:${selected}`;
+      stored = sessionStorage.getItem(key);
+      if (!stored) {
+        const legacy = sessionStorage.getItem(`roast-session:${selected}`);
+        if (legacy && state.history.some((r) => r.session_id === legacy && r.persona === selected)) stored = legacy;
+      }
+      const next = stored || latestSession || crypto.randomUUID();
+      sessionStorage.setItem(key, next);
+      setSessionId(next);
+    } catch {
+      setSessionId(latestSession || crypto.randomUUID());
+    }
+  }, [ready, selected, state.accountId, state.email]);
 
   const activeSessionId =
     sessionId ||
@@ -573,7 +582,7 @@ function InstaChatScreen({
     setNewChatConfirmOpen(false);
     const nextSession = crypto.randomUUID();
     try {
-      sessionStorage.setItem(`roast-session:${selected}`, nextSession);
+      sessionStorage.setItem(`roast-session:${state.accountId || state.email || "guest"}:${selected}`, nextSession);
     } catch {}
     setSessionId(nextSession);
     setBlocked(false);
