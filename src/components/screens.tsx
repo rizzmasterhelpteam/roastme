@@ -60,6 +60,7 @@ import {
 } from "lucide-react";
 import { useApp, ClientError } from "./app-provider";
 import { Portrait } from "./art";
+import { chatAccount, restoreChat, rememberChat } from "@/lib/chat-selection";
 import { Controls } from "./controls";
 import { Button } from "./ui/button";
 import { personas, findPersona, type Roast } from "@/lib/personas";
@@ -477,12 +478,20 @@ export function SavedPage() {
 export const SavedRepliesModal = SavedPage;
 
 function InstaChatScreen({
-  initialPersonaId = "savage",
+  initialPersonaId,
 }: {
   initialPersonaId?: string;
 }) {
   const { state, api, level, chaos, toast, ready } = useApp();
-  const [selected, setSelected] = useState(initialPersonaId);
+  const stores = () => {
+    try { return [localStorage, sessionStorage] as const; } catch { return []; }
+  };
+  const [chat, setChat] = useState(() => restoreChat(state, initialPersonaId, ...stores()));
+  const { persona: selected, sessionId } = chat;
+  const setSelected = (id: string) => setChat(restoreChat(state, id, ...stores()));
+  const setSessionId = (id: string) => setChat(prev => ({ ...prev, sessionId: id }));
+  const scope = `${chatAccount(state)}:${initialPersonaId || ""}`;
+  const scopeRef = useRef(scope);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
@@ -493,12 +502,11 @@ function InstaChatScreen({
   const [controlOpen, setControlOpen] = useState(false);
   const [attachedImage, setAttachedImage] = useState("");
   const [attachedFileName, setAttachedFileName] = useState("");
-  const [sessionId, setSessionId] = useState("");
   const [newChatConfirmOpen, setNewChatConfirmOpen] = useState(false);
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   const endRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
-  const initialScrollDoneRef = useRef(false);
+  const initialScrollDoneRef = useRef("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -508,35 +516,12 @@ function InstaChatScreen({
   const p = findPersona(selected);
   const savedCount = state.history.filter((r) => r.saved).length;
 
-  useEffect(() => {
-    if (initialPersonaId && initialPersonaId !== selected) {
-      setSelected(initialPersonaId);
-    }
-  }, [initialPersonaId]);
-
-  useEffect(() => {
-    if (!ready) return;
-    const latestSession = state.history.find(
-      (r) =>
-        r.persona === selected &&
-        (r.type === "chat" || r.type === "image" || !r.type) &&
-        r.session_id,
-    )?.session_id;
-    let stored: string | null = null;
-    try {
-      const key = `roast-session:${state.accountId || state.email || "guest"}:${selected}`;
-      stored = sessionStorage.getItem(key);
-      if (!stored) {
-        const legacy = sessionStorage.getItem(`roast-session:${selected}`);
-        if (legacy && state.history.some((r) => r.session_id === legacy && r.persona === selected)) stored = legacy;
-      }
-      const next = stored || latestSession || crypto.randomUUID();
-      sessionStorage.setItem(key, next);
-      setSessionId(next);
-    } catch {
-      setSessionId(latestSession || crypto.randomUUID());
-    }
-  }, [ready, selected, state.accountId, state.email]);
+  useLayoutEffect(() => {
+    if (!ready || scopeRef.current === scope) return;
+    scopeRef.current = scope;
+    setChat(restoreChat(state, initialPersonaId, ...stores()));
+  }, [ready, scope]);
+  useEffect(() => { rememberChat(stores()[0], chat); }, [chat]);
 
   const activeSessionId =
     sessionId ||
@@ -561,8 +546,13 @@ function InstaChatScreen({
     const viewport = viewportRef.current;
     if (!viewport) return;
 
-    const firstLoadedView = !initialScrollDoneRef.current;
-    initialScrollDoneRef.current = true;
+    const view = `${chat.account}:${selected}:${sessionId}`;
+    const firstLoadedView = initialScrollDoneRef.current !== view;
+    initialScrollDoneRef.current = view;
+    if (firstLoadedView) {
+      viewport.scrollTo({ top: viewport.scrollHeight, behavior: "auto" });
+      return;
+    }
     const frame = window.requestAnimationFrame(() => {
       viewport.scrollTo({
         top: viewport.scrollHeight,
@@ -573,6 +563,7 @@ function InstaChatScreen({
   }, [
     ready,
     selected,
+    sessionId,
     messages.length,
     messages[messages.length - 1]?.id,
     busy,
@@ -588,7 +579,7 @@ function InstaChatScreen({
     setNewChatConfirmOpen(false);
     const nextSession = crypto.randomUUID();
     try {
-      sessionStorage.setItem(`roast-session:${state.accountId || state.email || "guest"}:${selected}`, nextSession);
+      rememberChat(stores()[0], { ...chat, sessionId: nextSession });
     } catch {}
     setSessionId(nextSession);
     setBlocked(false);

@@ -230,11 +230,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {
         if (mounted) {
           const message = e instanceof Error ? e.message : "Unable to load account.";
-          if (isNative()) setStartupError(message);
-          else {
-            toast(message);
-            setReady(true);
-          }
+          setStartupError(message);
         }
       }
     }
@@ -400,8 +396,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             <p>You can close this tab or app, or move Premium back here.</p>
           </div>
         </main>
-      ) : isNative() && !ready ? (
+      ) : !ready ? (
         <div
+          className="app-startup"
           aria-busy={!startupError}
           aria-label="Loading your account"
           style={{ position: "fixed", inset: 0, background: "#000", color: "#fff", zIndex: 10000, display: "grid", placeItems: "center", padding: 24 }}

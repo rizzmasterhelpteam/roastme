@@ -10,9 +10,9 @@ await mkdir('work',{recursive:true});
 let booted=false;for(let i=0;i<45;i++){try{if(adb('shell','getprop','sys.boot_completed')==='1'){booted=true;break;}}catch{}await new Promise(r=>setTimeout(r,2000));}
 if(!booted)throw Error('Emulator did not finish booting.');
 if(process.env.ANDROID_SKIP_INSTALL!=='true')console.log(adb('install','-r','android/app/build/outputs/apk/debug/app-debug.apk'));
-adb('shell','am','force-stop','ai.roastme.app');
-adb('shell','am','start','-n','ai.roastme.app/.MainActivity');
-let pid='';for(let i=0;i<30;i++){try{pid=adb('shell','pidof','ai.roastme.app');}catch{}if(pid)break;await new Promise(r=>setTimeout(r,1000));}
+adb('shell','am','force-stop','com.roastmeai.vantalum');
+adb('shell','am','start','-n','com.roastmeai.vantalum/ai.roastme.app.MainActivity');
+let pid='';for(let i=0;i<30;i++){try{pid=adb('shell','pidof','com.roastmeai.vantalum');}catch{}if(pid)break;await new Promise(r=>setTimeout(r,1000));}
 if(!pid)throw Error('Android app process did not start. Inspect AndroidRuntime logs.');
 adb('forward','tcp:9223',`localabstract:webview_devtools_remote_${pid}`);
 let browser,lastError;for(let i=0;i<15;i++){try{browser=await chromium.connectOverCDP('http://127.0.0.1:9223',{timeout:5000,noDefaults:true});break;}catch(error){lastError=error;await new Promise(r=>setTimeout(r,1000));}}

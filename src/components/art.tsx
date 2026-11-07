@@ -2,6 +2,7 @@ import { personas } from "@/lib/personas";
 export function Portrait({
   id = "savage",
   className = "",
+  style,
   ...props
 }: { id?: string; className?: string } & React.HTMLAttributes<HTMLDivElement>) {
   const index = Math.max(
@@ -14,10 +15,11 @@ export function Portrait({
       aria-label={personas[index].name}
       className={`portrait ${className}`}
       style={{
-        backgroundImage: id === "savage" ? "url(/logo.png?v=savage-classic-20261103)" : "url(/personas.webp)",
-        backgroundSize: id === "savage" ? "contain" : "300% 200%",
+        backgroundImage: `url(/brand/${personas[index].id}.webp?v=complete-20261106)`,
+        backgroundSize: "contain",
         backgroundRepeat: "no-repeat",
-        backgroundPosition: id === "savage" ? "center" : `${(index % 3) * 50}% ${Math.floor(index / 3) * 100}%`,
+        backgroundPosition: "center",
+        ...style,
       }}
       {...props}
     />

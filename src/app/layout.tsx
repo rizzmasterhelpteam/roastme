@@ -13,9 +13,9 @@ export const metadata: Metadata = {
   applicationName: "Roast Me AI",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/favicon-savage.png?v=savage-classic-20261103", type: "image/png", sizes: "64x64" }],
-    shortcut: "/favicon.ico?v=savage-classic-20261103",
-    apple: "/apple-touch-icon.png?v=savage-classic-20261103",
+    icon: [{ url: "/icon.png?v=complete-20261107", type: "image/png", sizes: "64x64" }],
+    shortcut: "/favicon.ico?v=complete-20261107",
+    apple: "/apple-touch-icon.png?v=complete-20261106",
   },
 };
 export const viewport: Viewport = {
