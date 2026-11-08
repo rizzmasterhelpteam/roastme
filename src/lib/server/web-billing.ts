@@ -249,17 +249,21 @@ export async function handleDodoEvent(
     if (event.type === "dispute.lost" || fullRefund) {
       for (const subscription of payment.subscription_ids) {
         const sub = await dodoClient().subscriptions.retrieve(subscription);
-        // Refunding an old billing period must not revoke a later paid renewal.
+        // Use the paid service period, not the payment creation time: a renewal
+        // payment can be created before its billing date.
+        const period = payment.service_periods.find(
+          (p) => p.subscription_id === subscription,
+        );
         if (
-          Date.parse(payment.created_at) >=
-          Date.parse(sub.previous_billing_date)
+          period &&
+          Date.parse(period.ends_at) > Date.parse(sub.previous_billing_date)
         )
           await syncDodoSubscription(
             db,
             subscription,
             undefined,
             id,
-            sub.next_billing_date,
+            period.ends_at,
           );
       }
     }

@@ -13,11 +13,13 @@ test("hosted checkout and webhook reconciliation use trusted account/product dat
     Object.assign(process.env,{DODO_PAYMENTS_API_KEY:'synthetic-key',DODO_PAYMENTS_WEBHOOK_KEY:'whsec_'+Buffer.from('synthetic-webhook-secret').toString('base64'),DODO_PAYMENTS_WEEKLY_PRODUCT_ID:'pdt_weekly',DODO_PAYMENTS_MONTHLY_PRODUCT_ID:'pdt_monthly',DODO_PAYMENTS_ENVIRONMENT:'live_mode'});
     const { webCheckout, syncDodoSubscription, handleDodoEvent } = await import('./src/lib/server/web-billing.ts');
     const calls=[], applied=[], processed=new Set();
+    let refundedPeriod = null;
     const product={product_id:'pdt_monthly',is_recurring:true,price:{type:'recurring_price',currency:'USD',price:1599,payment_frequency_interval:'Month',payment_frequency_count:1}};
     const sub={subscription_id:'sub_example',product_id:'pdt_monthly',customer:{customer_id:'cus_owned'},metadata:{app:'roastme',supabase_user_id:'owner'},status:'cancelled',previous_billing_date:new Date().toISOString(),next_billing_date:new Date(Date.now()+86400000).toISOString(),payment_frequency_interval:'Month',payment_frequency_count:1,on_demand:false};
     globalThis.fetch=async (url,init)=>{
       const path=new URL(url).pathname; calls.push({path,init});
       if(path.includes('/products/')) return Response.json(product);
+      if(path.includes('/payments/')) return Response.json({refund_status:'full',subscription_ids:['sub_example'],service_periods:[{subscription_id:'sub_example',ends_at:refundedPeriod}],created_at:'2000-01-01T00:00:00Z'});
       if(path.includes('/subscriptions/')) return Response.json(sub);
       if(path.endsWith('/checkouts')) {
         const body=JSON.parse(init.body);
@@ -44,6 +46,15 @@ test("hosted checkout and webhook reconciliation use trusted account/product dat
     const count=calls.length;
     await handleDodoEvent(db,raw,headers);
     assert.equal(applied.length,1); assert.equal(calls.length,count,'duplicate event is already processed');
+    for(const current of [false,true]) {
+      refundedPeriod=current?sub.next_billing_date:sub.previous_billing_date;
+      const refundId='evt_refund_'+current, refundRaw=JSON.stringify({type:'refund.succeeded',data:{payment_id:'pay_example'}});
+      const refundSignature=createHmac('sha256','synthetic-webhook-secret').update(refundId+'.'+timestamp+'.'+refundRaw).digest('base64');
+      const before=applied.length;
+      await handleDodoEvent(db,refundRaw,{'webhook-id':refundId,'webhook-timestamp':timestamp,'webhook-signature':'v1,'+refundSignature});
+      assert.equal(applied.length,before+(current?1:0));
+      if(current) assert.equal(applied.at(-1).p_blocked_until,sub.next_billing_date);
+    }
     console.log('Dodo request flow passed');
   `;
   assert.match(
