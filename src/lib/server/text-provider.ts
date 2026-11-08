@@ -8,7 +8,7 @@ import {
 export class TextProviderError extends Error {}
 export async function completeText(
   messages: { role: string; content: string }[],
-  json: boolean | "memory" = false,
+  json: boolean | "combined" = false,
   attempt = 0,
 ) {
   const safety = json === true;
@@ -40,7 +40,7 @@ export async function completeText(
         max_tokens: 2048,
         // This checkpoint supports low/high/max/none, not OpenAI's medium.
         // Keep reasoning out of the reply and require JSON/reasoning support.
-        reasoning: { effort: safety ? "low" : "none", exclude: true },
+        reasoning: { effort: "none", exclude: true },
         provider: { require_parameters: true },
         ...(json
           ? {
@@ -48,17 +48,20 @@ export async function completeText(
               response_format: {
                 type: "json_schema",
                 json_schema: {
-                  name: safety ? "roast_safety" : "roast_with_notes",
+                  name: safety ? "roast_safety" : "checked_roast_with_notes",
                   strict: true,
                   schema: {
                     type: "object",
                     properties: safety
                       ? { allowed: { type: "boolean" } }
                       : {
+                          allowed: { type: "boolean" },
                           reply: { type: "string" },
                           notes: { type: "string" },
                         },
-                    required: safety ? ["allowed"] : ["reply", "notes"],
+                    required: safety
+                      ? ["allowed"]
+                      : ["allowed", "reply", "notes"],
                     additionalProperties: false,
                   },
                 },
@@ -149,7 +152,9 @@ export async function completeText(
       model: data.model,
       generationId: data.id,
       cost: data.usage.cost,
-      purpose: safety ? "safety" : "roast",
+      purpose: safety ? "image_description_safety" : "roast_with_safety",
+      reasoningEffort: "none",
+      attempt,
       budgetedInput: countInputTokens(messages),
       historyTurns: safety
         ? 0
@@ -180,14 +185,19 @@ export async function completeText(
         !Array.isArray(result) &&
         (safety
           ? typeof result.allowed === "boolean"
-          : typeof result.reply === "string" &&
-            !!result.reply.trim() &&
+          : typeof result.allowed === "boolean" &&
+            typeof result.reply === "string" &&
+            (!result.allowed || !!result.reply.trim()) &&
             typeof result.notes === "string");
       if (!valid) throw new Error("Invalid AI envelope");
       return JSON.stringify(
         safety
           ? { allowed: result.allowed }
-          : { reply: result.reply, notes: result.notes },
+          : {
+              allowed: result.allowed,
+              reply: result.reply,
+              notes: result.notes,
+            },
       );
     } catch {
       if (attempt === 0) return completeText(messages, json, attempt + 1);

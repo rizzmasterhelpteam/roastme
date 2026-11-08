@@ -125,17 +125,17 @@ export async function generate(
         notes,
         remember,
       ),
-      remember ? "memory" : false,
+      "combined",
     );
   } else {
     content = await completeText(
       buildGenerationMessages(input, context, undefined, notes, remember),
-      remember ? "memory" : false,
+      "combined",
     );
   }
-  const remembered = remember
-    ? parseRememberedReply(content)
-    : { content, notes: "" };
+  const checked = JSON.parse(content);
+  if (checked.allowed !== true) throw new SafetyError();
+  const remembered = parseRememberedReply(content);
   content = remembered.content;
   if (!content.trim()) throw new Error("No roast came back. Please try again.");
   if (
@@ -144,8 +144,7 @@ export async function generate(
   )
     throw new SafetyError();
   content = normalizeRoastPunctuation(content);
-  await moderate(content, "output");
-  return { content, notes: remembered.notes };
+  return { content, notes: remember ? remembered.notes : "" };
 }
 export function demoRoast(input: Input) {
   const p = findPersona(input.persona),

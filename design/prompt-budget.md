@@ -5,9 +5,9 @@ The shared instructions are compressed without changing the selected model or re
 Local counts use the pinned gpt-tokenizer o200k_base BPE encoding, plus a conservative framing allowance. This is a local planning budget, not an exact billing guarantee for every provider/model. API response usage is authoritative and is logged as numeric counts only (input, cached input, output and reasoning); message content is not added to usage logs.
 
 - Generation input: at most 2,200 locally counted tokens.
-- Safety input: at most 800 tokens, including the generated reply.
-- Normal text/chat/battle: at most 3,000 locally counted input tokens across the two successful calls.
-- Photo requests have an additional description safety call (up to800 tokens) and Gemini image processing; the 3,000 text budget is not the entire image pipeline's usage.
+- Standalone image-description safety input: at most 800 locally counted tokens.
+- Normal text/chat/battle: one combined generation/check request, at most 2,200 locally counted input tokens, including reply/memory/output-check instructions.
+- Photos use Gemini analysis, a description safety call (up to 800 tokens) and combined generation/check (up to 2,200). Gemini image tokens are additional.
 
 The latest user message and system rules are never truncated. Retain up to six recent exchanges as a chronological suffix. Drop oldest exchanges first. If an old reply is exceptionally large, keep its user message and a clearly marked head/tail excerpt when it fits. If mandatory new input cannot fit, reject with a shorten-message error and do not charge app credits. If a generated reply cannot fit the safety budget, return a retry error; never skip safety or silently truncate a new reply.
 
@@ -23,7 +23,7 @@ Main-chat session pointers are scoped by account as well as persona and persiste
 
 ## Compact conversation notes
 
-Session-based generations now return a JSON envelope containing the visible reply and updated plain-text notes in the same roast-generation request. No extra summarizer request is added. Notes are capped at 200 locally counted BPE tokens and 1,200 characters, keeping whole fact lines. Notes and the memory instruction share the existing 2,200-token main-input budget; the 800-token output safety check remains separate. Notes add up to 200 output tokens, within the existing 2,048 completion-token limit shared with reasoning. API usage remains authoritative.
+Session-based generations now return a JSON envelope containing the visible reply and updated plain-text notes in the same roast-generation request. No extra summarizer request is added. Notes are capped at 200 locally counted BPE tokens and 1,200 characters, keeping whole fact lines. Notes and the memory instruction share the existing 2,200-token main-input budget; the final output decision is returned in the same request. Notes add up to 200 output tokens, within the existing 2,048 completion-token limit shared with reasoning. API usage remains authoritative.
 
 Retain explicit user facts, named subjects, active topic, corrections and referents. Never promote assistant inventions or jokes into facts; preserve fictional context. Exclude credentials, contact details, sensitive traits, internal/provider details and instructions. Latest dialogue overrides stale summaries. The summary enters as labelled untrusted user data before recent exchanges, never as a system instruction. The latest message and immediately preceding exchange retain priority if space runs out.
 
@@ -39,6 +39,8 @@ Persona reset follow-up: apply `supabase/persona-chat-reset.sql` before deployin
 
 ## OpenRouter text model
 
-Text generation and output safety now use `deepseek/deepseek-v4-flash-0731` through OpenRouter. This checkpoint advertises low/high/max/none reasoning, so roast requests use none (reasoning disabled); safety requests use low. Safety reasoning is excluded from returned content but remains billable within the existing 2,048-token completion limit. The 2,200/800 local input planning caps, history, memory, persona instructions and Gemini vision step are retained. The o200k_base estimator is not DeepSeek's tokenizer: OpenRouter's reported usage and cost are authoritative. Production logs identify the actual model and generation ID alongside numeric usage, without prompt, response or reasoning text.
+Text generation and output safety now use `deepseek/deepseek-v4-flash-0731` through OpenRouter. This checkpoint advertises low/high/max/none reasoning, all requests use none (reasoning disabled), including image-description checks. The combined reply, notes and output decision share the existing 2,048-token completion limit. The 2,200/800 local input planning caps, history, memory, persona instructions and Gemini vision step are retained. The o200k_base estimator is not DeepSeek's tokenizer: OpenRouter's reported usage and cost are authoritative. Production logs identify the actual model and generation ID alongside numeric usage, without prompt, response or reasoning text.
 
 Reply length is prompt guidance only: short targets 8-16 words (instructed maximum 20), medium 20-35 (40), and long 40-60 (70). These instructions apply to the visible reply across all personas and languages. Once generated, an otherwise valid reply is displayed in full even if longer than requested. There is no length-check rejection, truncation or additional shortening request. Existing output safety and malformed-response handling remain separate.
+
+Normal generation returns {allowed,reply,notes}. The model checks its outgoing reply using the existing safety instructions; local validation and persona-output guards still run. An unsafe decision aborts the generation before history/memory/credit commit. This is a same-model decision, not an independent audit. A successful normal reply uses one OpenRouter request; malformed-response or rate-limit retries can still add a request on failures. Usage logs label combined generations roast_with_safety, include reasoningEffort=none and the attempt number, and never include conversation text.

@@ -24,7 +24,7 @@ test("OpenRouter transport preserves JSON replies and never returns reasoning", 
         finish_reason: "stop",
         message: {
           content:
-            '{"reply":"Pickle has started charging rent.","notes":"Fictional parrot: Pickle."}',
+            '{"allowed":true,"reply":"Pickle has started charging rent.","notes":"Fictional parrot: Pickle."}',
           reasoning: "Internal reasoning must never become a roast.",
         },
       },
@@ -46,7 +46,7 @@ test("OpenRouter transport preserves JSON replies and never returns reasoning", 
   const messages = [
     { role: "user", content: "Remember my fictional parrot Pickle." },
   ];
-  const result = await completeText(messages, "memory");
+  const result = await completeText(messages, "combined");
   assert.equal(JSON.parse(result).notes, "Fictional parrot: Pickle.");
   assert.doesNotMatch(result, /Internal reasoning/);
   assert.equal(
@@ -64,7 +64,7 @@ test("OpenRouter transport preserves JSON replies and never returns reasoning", 
   assert.equal(requests[0].body.response_format.json_schema.strict, true);
   assert.deepEqual(
     requests[0].body.response_format.json_schema.schema.required,
-    ["reply", "notes"],
+    ["allowed", "reply", "notes"],
   );
   assert.equal(requests[0].body.provider.require_parameters, true);
   assert.equal(requests[0].body.max_tokens, 2048);
@@ -76,7 +76,7 @@ test("OpenRouter transport preserves JSON replies and never returns reasoning", 
     ],
   };
   assert.equal(await completeText(messages, true), '{"allowed":true}');
-  assert.equal(requests[1].body.reasoning.effort, "low");
+  assert.equal(requests[1].body.reasoning.effort, "none");
   assert.deepEqual(
     requests[1].body.response_format.json_schema.schema.required,
     ["allowed"],
@@ -98,7 +98,7 @@ test("OpenRouter transport preserves JSON replies and never returns reasoning", 
     choices: [{ finish_reason: "stop", message: { content: '{"reply":' } }],
   };
   const beforeMalformed = requests.length;
-  await assert.rejects(completeText(messages, "memory"), TextProviderError);
+  await assert.rejects(completeText(messages, "combined"), TextProviderError);
   assert.equal(
     requests.length,
     beforeMalformed + 2,

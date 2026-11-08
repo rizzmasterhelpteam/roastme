@@ -29,5 +29,8 @@ export function buildGenerationMessages(
     system += ` Create a playful six-line roast battle between fictional ${persona.name} and ${other.name}. ${other.name}'s style: ${other.prompt}. Continue the established topic through one shared comic premise and call-and-response. Each line answers the previous line; the last resolves the bit. Alternate speakers with name prefixes. Only roast these fictional personas, not real people.`;
   }
   if (remember) system += memoryInstruction;
+  system +=
+    " Return JSON {allowed:boolean,reply:string,notes:string}. Check the outgoing reply against safety rules before returning it. Judge the reply, not rude user input. If unsafe, allowed=false and empty reply/notes; otherwise allowed=true with the finished roast.";
+  if (!remember) system += " Leave notes empty.";
   return budgetConversation(system, latest, context, compactNotes(notes));
 }
