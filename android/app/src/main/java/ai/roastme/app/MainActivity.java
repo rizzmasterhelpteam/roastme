@@ -7,6 +7,7 @@ import android.webkit.WebSettings;
 public class MainActivity extends BridgeActivity {
     @Override public void onCreate(Bundle savedInstanceState) {
         registerPlugin(SecureSessionPlugin.class);
+        registerPlugin(PlayBillingPlugin.class);
         super.onCreate(savedInstanceState);
         android.webkit.WebView.setWebContentsDebuggingEnabled((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0);
         if (getBridge() != null) {

@@ -1,59 +1,78 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ApiError, ensure } from "./backend";
-export async function syncRevenueCat(db: SupabaseClient, userId: string) {
-  const secret = process.env.REVENUECAT_SECRET_KEY;
-  if (!secret)
-    throw new ApiError(
-      "Subscriptions are not configured yet. No payment was taken.",
-      503,
-    );
-  const checkedAt = new Date().toISOString();
-  const response = await fetch(
-    `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(userId)}`,
-    {
-      headers: {
-        Authorization: `Bearer ${secret}`,
-        Accept: "application/json",
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(15000),
-    },
+import {
+  playApi,
+  playReceiptSchema,
+  verifyPlaySignature,
+  readPlaySubscription,
+  playTokenHash,
+  PlayBillingError,
+} from "./google-play";
+async function checkToken(
+  db: SupabaseClient,
+  user: string,
+  token: string,
+  expectedProduct?: string,
+) {
+  const checked = new Date().toISOString();
+  const data = await playApi(
+    `purchases/subscriptionsv2/tokens/${encodeURIComponent(token)}`,
   );
-  if (!response.ok)
-    throw new ApiError(
-      "Your purchase is pending verification. Use Restore purchases to retry.",
-      503,
+  const result = readPlaySubscription(data, user);
+  if (expectedProduct && result.productId !== expectedProduct)
+    throw new PlayBillingError(
+      "The purchase token does not match this receipt.",
+      400,
     );
-  const { subscriber } = await response.json();
-  const entitlement =
-    subscriber?.entitlements?.[process.env.REVENUECAT_ENTITLEMENT || "premium"];
-  const expiry = entitlement?.expires_date;
-  const subscription =
-    subscriber?.subscriptions?.[entitlement?.product_identifier];
-  // Lifetime or promotional grants are not part of the offered weekly/monthly plans.
-  const active =
-    !!expiry &&
-    new Date(expiry).getTime() > Date.now() &&
-    !subscription?.refunded_at;
-  const plan =
-    entitlement?.product_identifier === process.env.REVENUECAT_WEEKLY_PRODUCT
-      ? "weekly"
-      : entitlement?.product_identifier ===
-          process.env.REVENUECAT_MONTHLY_PRODUCT
-        ? "monthly"
-        : null;
-  const acceptedEnvironment =
-    process.env.NODE_ENV !== "production" ||
-    process.env.ALLOW_SANDBOX_PURCHASES === "true" ||
-    subscription?.is_sandbox === false;
-  ensure(
-    await db.rpc("apply_store_subscription", {
-      p_user: userId,
-      p_active: active && !!plan && acceptedEnvironment,
-      p_plan: plan,
-      p_expiry: expiry || null,
-      p_checked: checkedAt,
-    }),
-  );
+  const applied = await db.rpc("apply_google_play_subscription", {
+    p_user: user,
+    p_hash: playTokenHash(token),
+    p_token: token,
+    p_product: result.productId,
+    p_base: result.basePlanId,
+    p_plan: result.plan,
+    p_active: result.active,
+    p_expiry: result.expiry,
+    p_state: result.state,
+    p_checked: checked,
+  });
+  if (applied.error)
+    throw new PlayBillingError(
+      "The purchase could not be linked to this account. Use Restore purchases to retry.",
+    );
+  if (result.active && result.acknowledge)
+    await playApi(
+      `purchases/subscriptions/${encodeURIComponent(result.productId)}/tokens/${encodeURIComponent(token)}:acknowledge`,
+      "POST",
+    );
+}
+export async function syncGooglePlay(
+  db: SupabaseClient,
+  user: string,
+  receipts: unknown,
+) {
+  const list = playReceiptSchema.array().max(10).parse(receipts);
+  for (const receipt of list) {
+    const purchase = verifyPlaySignature(receipt);
+    await checkToken(db, user, purchase.purchaseToken, purchase.productId);
+  }
+  if (!list.length) await refreshGooglePlay(db, user, true);
+}
+export async function refreshGooglePlay(
+  db: SupabaseClient,
+  user: string,
+  force = false,
+) {
+  const rows = await db
+    .from("google_play_purchases")
+    .select("purchase_token,checked_at")
+    .eq("user_id", user)
+    .gte("expires_at", new Date(Date.now() - 59 * 86400000).toISOString());
+  if (rows.error)
+    throw new PlayBillingError(
+      "Subscription records could not be loaded. Please retry.",
+    );
+  for (const row of rows.data || [])
+    if (force || Date.parse(row.checked_at) < Date.now() - 300000)
+      await checkToken(db, user, row.purchase_token);
 }

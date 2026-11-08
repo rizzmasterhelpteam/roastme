@@ -14,7 +14,13 @@ import { generationSchema, imageType, reportReasons } from "@/lib/validation";
 import { levelFromChaos, type Roast } from "@/lib/personas";
 import { replyLanguages } from "@/lib/languages";
 import { isAllowedOrigin, corsHeaders } from "@/lib/api-origin";
-import { syncRevenueCat } from "@/lib/server/android-monetization";
+import { syncGooglePlay } from "@/lib/server/android-monetization";
+import {
+  playConfigured,
+  playCatalog,
+  playAccountId,
+  PlayBillingError,
+} from "@/lib/server/google-play";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -37,12 +43,11 @@ async function handle(
           "Sign in to an account before purchasing Premium.",
           401,
         );
-      if (b.demo || !process.env.REVENUECAT_SECRET_KEY)
-        throw new ApiError(
-          "Subscriptions are not configured yet. No payment was taken.",
-          503,
-        );
-      return NextResponse.json({ configured: true });
+      return NextResponse.json({
+        configured: !b.demo && playConfigured(),
+        products: playCatalog(),
+        accountId: playAccountId(b.id),
+      });
     }
     if (request.method === "GET" && path === "rewards/status") {
       if (b.demo)
@@ -104,7 +109,17 @@ async function handle(
     if (path === "billing/sync") {
       if (b.demo)
         throw new ApiError("Subscriptions are not configured yet.", 503);
-      await syncRevenueCat(b.db, b.id);
+      if (b.user.is_anonymous)
+        throw new ApiError(
+          "Sign in before restoring or purchasing Premium.",
+          401,
+        );
+      if (!playConfigured())
+        throw new ApiError(
+          "Google Play verification is not configured yet. No payment has been taken.",
+          503,
+        );
+      await syncGooglePlay(b.db, b.id, body.purchases || []);
       return NextResponse.json({ state: await getState(b) });
     }
     if (path === "rewards/intent") {
@@ -466,6 +481,11 @@ async function handle(
     } else throw new ApiError("Not found", 404);
     return NextResponse.json({ state: await getState(b) });
   } catch (error) {
+    if (error instanceof PlayBillingError)
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
     if (error instanceof InputBudgetError)
       return NextResponse.json({ error: error.message }, { status: 400 });
     if (error instanceof TextProviderError)

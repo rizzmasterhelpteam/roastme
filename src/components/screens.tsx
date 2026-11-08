@@ -3300,9 +3300,7 @@ function Premium({ inModal = false }: { inModal?: boolean }) {
   const [plan, setPlan] = useState("monthly");
   const [storePrices, setStorePrices] = useState<Record<string, string>>({});
   const storeEnabled =
-    isNative() &&
-    !!apiOrigin() &&
-    !!process.env.NEXT_PUBLIC_REVENUECAT_ANDROID_KEY;
+    isNative() && !!apiOrigin();
   useEffect(() => {
     if (!storeEnabled || !ready) return;
     let alive = true;

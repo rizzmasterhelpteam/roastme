@@ -43,7 +43,7 @@ Live moderation checks input and output, supplemented by deterministic blocking 
 
 ## Billing and rewarded ads
 
-Android now integrates Google Play subscriptions through RevenueCat and rewarded ads through AdMob, including server verification. These require your provider configuration; see `ANDROID.md`. The web checkout and ad endpoints remain unavailable until a web provider is connected. Client-reported completion never grants entitlements or credits. Planned prices are $4.99/week and $15.99/month; a configured Android paywall reads actual localized store prices.
+Android integrates Google Play Billing directly, with RSA receipt signatures and Google Play Developer API verification on Vercel. Google service credentials are required before checkout is enabled. Rewarded ads use the AdMob completion callback. These require your provider configuration; see `ANDROID.md`. The web checkout and ad endpoints remain unavailable until a web provider is connected. Premium requires verified purchase status; rewarded credits follow the configured SDK completion flow. Planned prices are $4.99/week and $15.99/month; a configured Android paywall reads actual localized store prices.
 
 `src/lib/server/monetization.ts` defines the provider boundaries. Before enabling:
 
@@ -71,7 +71,7 @@ The database test runs the actual schema and PL/pgSQL functions in PGlite with s
 
 Import this repository into Vercel as a Next.js project and set the environment variables in that project's settings. Use `npm run build`; Next.js handles routing and server functions. Configure the Supabase redirects for the production domain. Do not set `DEMO_MODE=true` on the public production service. Requests are limited by server request-body size; the client should use photos under 3 MB on hosts with a 4.5 MB body limit, or adopt signed direct uploads before supporting the full 5 MB upload limit there.
 
-The app also has a real Capacitor Android project with bundled UI, native sharing, encrypted sessions, PKCE deep links, RevenueCat Play Billing integration, AdMob server verification, and APK/AAB build scripts. See `ANDROID.md` for build commands, Android Studio's correct project folder, configuration, verification, and release signing. Store/AI/auth account configuration is still required before public distribution.
+The app also has a real Capacitor Android project with bundled UI, native sharing, encrypted sessions, PKCE deep links, direct Google Play Billing integration, AdMob server verification, and APK/AAB build scripts. See `ANDROID.md` for build commands, Android Studio's correct project folder, configuration, verification, and release signing. Store/AI/auth account configuration is still required before public distribution.
 
 Before public launch, finalize the operator identity/support address, age eligibility, data retention, legal text, production CAPTCHA for anonymous auth, moderation operations, store metadata, and billing policies. `/privacy` and `/terms` explicitly identify their unfinished operator details; they are not a legal-compliance certification.
 

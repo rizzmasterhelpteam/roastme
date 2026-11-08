@@ -22,7 +22,7 @@ This creates `android/app/build/outputs/bundle/release/app-release.aab`. Release
 ADMOB_APP_ID=ca-app-pub-YOUR_PUBLISHER~YOUR_APP
 ```
 
-The default AdMob app ID is Google's official Android test app ID. No rewarded ads are requested until a reward-unit ID and live server are configured. App ID/package name and product identifiers must match your Play Console, RevenueCat, and AdMob applications before the first store upload.
+The default AdMob app ID is Google's official Android test app ID. No rewarded ads are requested until a reward-unit ID and live server are configured. App ID/package name and product identifiers must match your Play Console and AdMob applications before the first store upload.
 
 ## Bundled UI and live API
 
@@ -58,17 +58,24 @@ In Supabase Auth enable anonymous sign-in, Google, and manual identity linking. 
 
 Enable email auth, production SMTP, and your email redirect configuration. Linking a new identity retains the existing guest UUID and credits/history. Linking an identity already owned by another account still requires an explicit account-merge process.
 
-## Google Play subscriptions through RevenueCat
+## Direct Google Play subscriptions
 
-1. Create weekly/monthly Play subscriptions and configure RevenueCat's Google Play connection and service credentials.
-2. Configure a `premium` entitlement and a current offering containing weekly and monthly packages.
-3. Set the APK's public `NEXT_PUBLIC_REVENUECAT_ANDROID_KEY` to the RevenueCat Android SDK key. This is a public SDK key, not the RevenueCat secret key.
-4. Set server-only `REVENUECAT_SECRET_KEY`, `REVENUECAT_ENTITLEMENT`, `REVENUECAT_WEEKLY_PRODUCT`, and `REVENUECAT_MONTHLY_PRODUCT` to your actual entitlement/product IDs.
-5. Set a strong `REVENUECAT_WEBHOOK_AUTH` value on the server and the identical Authorization header in RevenueCat's webhook configuration. Point that webhook to `/api/webhooks/revenuecat`.
+The app uses Google's native BillingClient directly. There is no RevenueCat SDK, account, or API key. `PlayBillingPlugin` queries localized prices, checks the exact base plan and recurrence interval, opens checkout using a hashed Supabase account ID, and restores completed purchases. Pending payments are never treated as paid. Receipts and signatures are sent to the authenticated Vercel API.
 
-The paywall loads localized prices from Google Play offerings. A successful SDK purchase or restore is **not sufficient** to activate Premium: the backend independently fetches RevenueCat's subscriber entitlement, validates configured products, expiry, refund and environment, then updates the profile atomically. Webhooks also fetch current provider state instead of trusting an old event payload. Out-of-order results cannot override a newer check. Production rejects sandbox purchases unless `ALLOW_SANDBOX_PURCHASES=true` is explicitly set for testing.
+Confirmed products:
 
-Restore and manage-subscription flows are wired. Management opens Google Play subscriptions. Validate the complete flow through a Play internal-testing track and licensed test account before charging real users. This cannot be verified without your store configuration.
+| Plan | Product ID | Base plan ID | Billing period |
+| --- | --- | --- | --- |
+| Weekly | weekly | goweekly | P1W |
+| Monthly | monthly | monthly | P1M |
+
+The owner's public RSA licensing key is bundled on the server in `google-play.ts`; `GOOGLE_PLAY_LICENSE_KEY` optionally overrides it. The backend verifies the original receipt signature and package, then checks the token with Google's `purchases.subscriptionsv2.get` API. Account binding, configured base plan, payment state, expiry, and test environment are verified before entitlement is committed. The server acknowledges successful new purchases after committing entitlement. Tokens cannot be transferred to another app account; purchase records are service-only in Supabase. Other valid purchases and administrator grants survive individual subscription expiration.
+
+Apply `supabase/google-play-billing.sql` to existing projects before deploying. Set the product/base-plan variables shown in `.env.example` on Vercel. Google Play service access is deliberately deferred by the owner: **checkout stays unavailable until `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is configured**. The public RSA key cannot prove current renewals, refunds or revocations; do not use it alone to grant auto-renewing Premium.
+
+When ready, enable the Google Play Android Developer API in a Google Cloud project, create a service account, grant that account app-scoped purchase/subscription permissions in Play Console, and save its entire credential JSON as the server-only Vercel Secret `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`. Redeploy. Never put this credential in Android assets or a `NEXT_PUBLIC_` variable. The OAuth scope is `https://www.googleapis.com/auth/androidpublisher`.
+
+Subscription state is rechecked when signed-in accounts use the API, at most once per five minutes for each purchase. This covers Android and web use of the shared Premium account. Google real-time developer notifications are not configured; changes while the account is unused are checked on its next request. Expiry is enforced independently by timestamp. A network/verification failure never grants a new entitlement or acknowledges an unverified purchase. Restore retries acknowledgement and verification. Actual purchase testing requires a Play internal-testing installation and license tester; do not claim end-to-end billing verified from a debug build or mocked receipt. Set `ALLOW_SANDBOX_PURCHASES=true` only when deliberately testing Google test purchases.
 
 ## AdMob rewarded ads
 
@@ -92,7 +99,7 @@ $env:ANDROID_TEST_SERIAL='emulator-5556'
 node scripts/verify-android.mjs
 ```
 
-The emulator script refuses physical-device serials. It checks bundled navigation, text/photo costs, on-device photo processing, saved history, clipboard, the Keystore bridge, share-card preview, daily rewards, and layout. Set `ANDROID_TEST_SHARE=true` to additionally automate the system share sheet on a responsive emulator; this host's emulator intermittently stalled Android system UI during that extended check. Unit/database tests cover signature tampering, CORS origins, verified ad idempotency, owner binding, subscription ordering, RLS and credit charging. Real Google OAuth, RevenueCat purchases, AdMob delivery, and provider receipt verification still require their account credentials and test environments.
+The emulator script refuses physical-device serials. It checks bundled navigation, text/photo costs, on-device photo processing, saved history, clipboard, the Keystore bridge, share-card preview, daily rewards, and layout. Set `ANDROID_TEST_SHARE=true` to additionally automate the system share sheet on a responsive emulator; this host's emulator intermittently stalled Android system UI during that extended check. Unit/database tests cover signature tampering, CORS origins, verified ad idempotency, owner binding, subscription ordering, RLS and credit charging. Real Google OAuth, Google Play purchases, AdMob delivery, and provider receipt verification still require their account credentials and test environments.
 
 Before store release, finish the operator/support/legal details already described in the main README, data-safety declarations for the configured SDKs, account-deletion web URL, Play content rating and age targeting, and upload signing. A successful APK/AAB build is not store approval.
 
