@@ -42,7 +42,28 @@ export async function completeText(
         // Keep reasoning out of the reply and require JSON/reasoning support.
         reasoning: { effort: safety ? "low" : "none", exclude: true },
         provider: { require_parameters: true },
-        ...(json ? { response_format: { type: "json_object" } } : {}),
+        ...(json
+          ? {
+              response_format: {
+                type: "json_schema",
+                json_schema: {
+                  name: safety ? "roast_safety" : "roast_with_notes",
+                  strict: true,
+                  schema: {
+                    type: "object",
+                    properties: safety
+                      ? { allowed: { type: "boolean" } }
+                      : {
+                          reply: { type: "string" },
+                          notes: { type: "string" },
+                        },
+                    required: safety ? ["allowed"] : ["reply", "notes"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+            }
+          : {}),
       }),
       signal: AbortSignal.timeout(30000),
     },
@@ -106,7 +127,11 @@ export async function completeText(
       `The text service could not process this request${reference}. Please contact support. No credits were used.`,
     );
   }
-  const data = await response.json();
+  const data = await response.json().catch(() => {
+    throw new TextProviderError(
+      "The AI service returned an unreadable response. Please retry. No credits were used.",
+    );
+  });
   // OpenRouter can return a provider error inside an HTTP 200 response.
   if (data.error || data.choices?.[0]?.finish_reason === "error") {
     console.error("Text provider returned an inference error", {
@@ -140,5 +165,35 @@ export async function completeText(
   const text = data.choices?.[0]?.message?.content;
   if (typeof text !== "string" || !text.trim())
     throw new Error("No roast came back. Please try again.");
+  if (json) {
+    try {
+      // Accept an enclosing Markdown fence, but never guess at partial JSON
+      // or display a raw envelope/hidden notes as a reply.
+      const raw = text
+        .trim()
+        .replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/i, "$1");
+      const result = JSON.parse(raw);
+      const valid =
+        result &&
+        typeof result === "object" &&
+        !Array.isArray(result) &&
+        (safety
+          ? typeof result.allowed === "boolean"
+          : typeof result.reply === "string" &&
+            !!result.reply.trim() &&
+            typeof result.notes === "string");
+      if (!valid) throw new Error("Invalid AI envelope");
+      return JSON.stringify(
+        safety
+          ? { allowed: result.allowed }
+          : { reply: result.reply, notes: result.notes },
+      );
+    } catch {
+      if (attempt === 0) return completeText(messages, json, attempt + 1);
+      throw new TextProviderError(
+        "The AI reply could not be read. Please retry. No credits were used.",
+      );
+    }
+  }
   return text.trim();
 }

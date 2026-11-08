@@ -59,7 +59,12 @@ test("OpenRouter transport preserves JSON replies and never returns reasoning", 
     effort: "none",
     exclude: true,
   });
-  assert.deepEqual(requests[0].body.response_format, { type: "json_object" });
+  assert.equal(requests[0].body.response_format.type, "json_schema");
+  assert.equal(requests[0].body.response_format.json_schema.strict, true);
+  assert.deepEqual(
+    requests[0].body.response_format.json_schema.schema.required,
+    ["reply", "notes"],
+  );
   assert.equal(requests[0].body.provider.require_parameters, true);
   assert.equal(requests[0].body.max_tokens, 2048);
   assert.equal(requests[0].body.store, undefined);
@@ -71,9 +76,39 @@ test("OpenRouter transport preserves JSON replies and never returns reasoning", 
   };
   assert.equal(await completeText(messages, true), '{"allowed":true}');
   assert.equal(requests[1].body.reasoning.effort, "low");
+  assert.deepEqual(
+    requests[1].body.response_format.json_schema.schema.required,
+    ["allowed"],
+  );
   process.env.OPENROUTER_MODEL = " deepseek/deepseek-v4-flash-0731 ";
   await completeText(messages);
   assert.equal(requests[2].body.model, "deepseek/deepseek-v4-flash-0731");
+
+  reply = {
+    choices: [
+      {
+        finish_reason: "stop",
+        message: { content: '```json\n{"allowed":true}\n```' },
+      },
+    ],
+  };
+  assert.equal(await completeText(messages, true), '{"allowed":true}');
+  reply = {
+    choices: [{ finish_reason: "stop", message: { content: '{"reply":' } }],
+  };
+  const beforeMalformed = requests.length;
+  await assert.rejects(completeText(messages, "memory"), TextProviderError);
+  assert.equal(
+    requests.length,
+    beforeMalformed + 2,
+    "one bounded retry for malformed provider JSON",
+  );
+  reply = {
+    choices: [
+      { finish_reason: "stop", message: { content: '{"allowed":"true"}' } },
+    ],
+  };
+  await assert.rejects(completeText(messages, true, 1), TextProviderError);
 
   status = 402;
   reply = { error: { code: 402, message: "Insufficient credits" } };
