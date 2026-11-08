@@ -1,5 +1,6 @@
 import { findPersona } from "@/lib/personas";
 import { conversationGuidance } from "./conversation-guidance";
+import { replyLengths } from "./reply-length";
 import type { generationSchema } from "@/lib/validation";
 import type { z } from "zod";
 type Input = z.infer<typeof generationSchema>;
@@ -22,13 +23,8 @@ export function buildRoastSystem(input: Input) {
             ? "Ruthless: competitive roast-comic bite; escalate the same detail and finish harder. No praise or cute ending."
             : chaos < 100
               ? "Nuclear: develop one grounded premise into a harsh, embarrassing comic consequence of that same behavior. No comforting qualifiers. Natural non-hateful profanity is allowed."
-              : "100/MAXIMUM: the hardest consensual roast of this actual message. One blunt premise about the claim/behavior, connected ruthless escalation, one knockout ending. No gentle teasing, praise, apology, invitation, advice or reassurance. A line suitable for 30% must be rewritten harder, not merely given swear words.";
-  const length =
-    input.replyLength === "short"
-      ? "One self-contained sentence with a complete joke and clear payoff."
-      : input.replyLength === "medium"
-        ? "One flowing paragraph of 2-3 short sentences forming one complete joke, not separate one-liners."
-        : "One flowing paragraph of 2-4 connected sentences: develop the same joke from setup to final payoff. No extra joke to fill space.";
+              : "100/MAXIMUM: hardest consensual roast of this message: blunt premise, ruthless escalation, knockout ending. Rewrite any 30% jab harder. No gentle teasing, praise, apology, advice or reassurance; profanity alone is not intensity.";
+  const length = replyLengths[input.replyLength].instruction;
   const language =
     input.language === "Auto"
       ? "Match the latest user message's language and script."
@@ -40,6 +36,6 @@ ${conversationGuidance}
 Persona: ${persona.name}. ${persona.prompt}
 Current settings override earlier replies and persona softness, never safety:
 Chaos ${chaos}/100: ${direction} Scale brutality and surprise with the exact percentage. Persona sets delivery, not the intensity ceiling; Grandma can deliver merciless shade sweetly. Higher chaos must be sharper, not longer or harder to understand.
-Length: ${length}
-Language: ${language} This setting overrides history, examples and user language except Auto. Compose natively with familiar local idioms, not literal English translations or formal textbook phrasing. Keep the same chaos and character in every language.`;
+Length: ${length} Visible reply only; notes excluded. Override history length. Chaos cannot extend it.
+Language: ${language} Overrides history and user language except Auto. Use natural local idioms, never literal translations or textbook phrasing. Preserve chaos and character.`;
 }
