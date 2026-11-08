@@ -26,9 +26,9 @@ begin
  insert into public.subscriptions(user_id,provider,provider_reference,plan_type,status,expires_at)
  values(p_user,'google_play','google_play:'||p_hash,p_plan,case when p_active then 'active' else 'expired' end,p_expiry)
  on conflict(provider_reference) do update set plan_type=excluded.plan_type,status=excluded.status,expires_at=excluded.expires_at;
- select plan,expires_at into best from public.google_play_purchases where user_id=p_user and active and expires_at>now() order by expires_at desc limit 1;
- update public.profiles set premium_status=found,premium_plan=best.plan,premium_expires_at=best.expires_at,subscription_checked_at=p_checked
- where id=p_user and (subscription_checked_at is null or subscription_checked_at<=p_checked);
+ select plan_type,expires_at into best from public.subscriptions where user_id=p_user and provider in ('google_play','dodo') and status='active' and expires_at>now() order by expires_at desc limit 1;
+ update public.profiles set premium_status=found,premium_plan=best.plan_type,premium_expires_at=best.expires_at,subscription_checked_at=greatest(subscription_checked_at,p_checked)
+ where id=p_user;
 end; $$;
 revoke all on function public.apply_google_play_subscription(uuid,text,text,text,text,text,boolean,timestamptz,text,timestamptz) from public,anon,authenticated;
 grant execute on function public.apply_google_play_subscription(uuid,text,text,text,text,text,boolean,timestamptz,text,timestamptz) to service_role;

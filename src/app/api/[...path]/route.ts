@@ -13,7 +13,7 @@ import {
 import { generationSchema, imageType, reportReasons } from "@/lib/validation";
 import { levelFromChaos, type Roast } from "@/lib/personas";
 import { replyLanguages } from "@/lib/languages";
-import { isAllowedOrigin, corsHeaders } from "@/lib/api-origin";
+import { isAllowedOrigin, corsHeaders, isNativeOrigin } from "@/lib/api-origin";
 import { syncGooglePlay } from "@/lib/server/android-monetization";
 import {
   playConfigured,
@@ -21,6 +21,8 @@ import {
   playAccountId,
   PlayBillingError,
 } from "@/lib/server/google-play";
+import { webBillingStatus, webCheckout, restoreDodo, webPortal } from "@/lib/server/web-billing";
+import { WebBillingError, webPlanSchema } from "@/lib/server/dodo";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 90;
@@ -36,7 +38,31 @@ async function handle(
       if (Number(request.headers.get("content-length") || 0) > 7600000)
         throw new ApiError("Request is too large.", 413);
     }
+    if (path.startsWith("rewards/") && path !== "rewards/daily" && !isNativeOrigin(request))
+      throw new ApiError("Rewarded ads are available only in the Android app. Upgrade to Premium or wait for the daily reset.", 403);
+    if (path.startsWith("billing/web/") && isNativeOrigin(request))
+      throw new ApiError("Use Google Play billing in the Android app.", 403);
     const b = await backend(request);
+    if (path.startsWith("billing/web/")) {
+      if (b.demo) throw new ApiError("Web subscriptions are not configured yet.", 503);
+      if (request.method === "GET" && path === "billing/web/status")
+        return NextResponse.json(await webBillingStatus());
+      if (b.user.is_anonymous) throw new ApiError("Sign in to an account before purchasing Premium.", 401);
+      if (request.method !== "POST") throw new ApiError("Not found", 404);
+      const raw = await request.text();
+      if (raw.length > 2048) throw new ApiError("Request is too large.", 413);
+      const body = JSON.parse(raw || "{}");
+      if (path === "billing/web/checkout") {
+        if ((await getState(b)).premium) throw new ApiError("You already have Premium on this account.", 409);
+        return NextResponse.json(await webCheckout(b.db, b.user, webPlanSchema.parse(body.plan)));
+      }
+      if (path === "billing/web/manage") return NextResponse.json(await webPortal(b.db, b.id));
+      if (path === "billing/web/restore") {
+        await restoreDodo(b.db, b.id, z.string().min(3).max(200).optional().parse(body.subscriptionId));
+        return NextResponse.json({ state: await getState(b) });
+      }
+      throw new ApiError("Not found", 404);
+    }
     if (request.method === "GET" && path === "billing/status") {
       if (!b.demo && b.user.is_anonymous)
         throw new ApiError(
@@ -502,7 +528,7 @@ async function handle(
       );
     if (error instanceof SyntaxError)
       return NextResponse.json({ error: "Invalid request." }, { status: 400 });
-    const known = error instanceof ApiError;
+    const known = error instanceof ApiError || error instanceof WebBillingError;
     if (!known)
       console.error(
         "Roast API:",

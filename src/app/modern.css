@@ -1576,3 +1576,5 @@ html[data-theme="light"] .settings-language { background: #fbf6ed; color: #462c3
 
 .entry-layout:has(.signin-card) > .screen-root { height: auto !important; min-height: 100% !important; flex: none !important; overflow: visible !important; }
 .signin-card.entry-card { flex: none; height: auto; max-height: none; }
+
+.chat-credit-offer-actions:has(> button:only-child) { grid-template-columns: 1fr; }

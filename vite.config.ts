@@ -17,6 +17,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
+        "@/lib/web-billing-client": path.resolve("native/web-billing.ts"),
         "@": path.resolve("src"),
         "next/link": path.resolve("native/link.tsx"),
         "next/navigation": path.resolve("native/navigation.ts"),

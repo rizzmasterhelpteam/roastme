@@ -1,4 +1,5 @@
 import "server-only";
+import { refreshDodo } from "./web-billing";
 import { refreshGooglePlay } from "./android-monetization";
 import {
   createClient,
@@ -94,7 +95,10 @@ export async function backend(request: Request): Promise<Backend> {
   const { data, error } = await db.auth.getUser(token);
   if (error || !data.user)
     throw new ApiError("Your session has expired. Please sign in again.", 401);
-  if (!data.user.is_anonymous) await refreshGooglePlay(db, data.user.id);
+  if (!data.user.is_anonymous) {
+    await refreshGooglePlay(db, data.user.id);
+    await refreshDodo(db, data.user.id);
+  }
   const route = new URL(request.url).pathname;
   if (!route.endsWith("/premium/connect") && !data.user.is_anonymous) {
     const profile = await db
@@ -132,7 +136,7 @@ export async function backend(request: Request): Promise<Backend> {
 }
 export async function getState(b: Backend): Promise<AppState> {
   if (b.demo) return b.record.state;
-  const [profile, settings, messages, saved] = await Promise.all([
+  const [profile, settings, messages, saved, subscriptions] = await Promise.all([
     b.db.from("profiles").select("*").eq("id", b.id).single(),
     b.db
       .from("user_settings")
@@ -146,8 +150,9 @@ export async function getState(b: Backend): Promise<AppState> {
       .order("created_at", { ascending: false })
       .limit(100),
     b.db.from("saved_roasts").select("message_id").eq("user_id", b.id),
+    b.db.from("subscriptions").select("provider").eq("user_id", b.id).eq("status", "active").gt("expires_at", new Date().toISOString()),
   ]);
-  for (const result of [profile, settings, messages, saved])
+  for (const result of [profile, settings, messages, saved, subscriptions])
     if (result.error)
       throw new ApiError(
         "Your account could not be loaded. Please retry.",
@@ -178,6 +183,7 @@ export async function getState(b: Backend): Promise<AppState> {
   );
   return {
     accountId: b.id,
+    premiumProviders: [...new Set((subscriptions.data || []).map((s) => s.provider))],
     credits: profile.data.credits_balance,
     premium:
       profile.data.premium_status &&

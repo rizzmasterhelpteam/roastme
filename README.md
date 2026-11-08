@@ -43,7 +43,7 @@ Live moderation checks input and output, supplemented by deterministic blocking 
 
 ## Billing and rewarded ads
 
-Android integrates Google Play Billing directly, with RSA receipt signatures and Google Play Developer API verification on Vercel. Google service credentials are required before checkout is enabled. Rewarded ads use the AdMob completion callback. These require your provider configuration; see `ANDROID.md`. The web checkout and ad endpoints remain unavailable until a web provider is connected. Premium requires verified purchase status; rewarded credits follow the configured SDK completion flow. Planned prices are $4.99/week and $15.99/month; a configured Android paywall reads actual localized store prices.
+Android integrates Google Play Billing directly, with RSA receipt signatures and Google Play Developer API verification on Vercel. Google service credentials are required before checkout is enabled. Rewarded ads use the AdMob completion callback. These require your provider configuration; see `ANDROID.md`. Web checkout uses Dodo when configured; the web does not offer rewarded ads. Premium requires verified purchase status; rewarded credits follow the configured SDK completion flow. Planned prices are $4.99/week and $15.99/month; a configured Android paywall reads actual localized store prices.
 
 `src/lib/server/monetization.ts` defines the provider boundaries. Before enabling:
 
@@ -87,3 +87,7 @@ tests/                    Postgres/security checks and browser workflows
 public/personas.webp      Optimized generated persona atlas
 design/                   Artwork source and generation prompt
 ```
+
+## Web billing and shared Premium
+
+Web upgrades use Dodo Payments; rewarded ads are Android-only. Web checkout remains disabled until Dodo keys, a webhook signing key and recurring product IDs are set. See [Dodo setup](design/dodo-setup.md). Google Play and Dodo entitlements are combined in Supabase under the same signed-in user, preserving access from either valid subscription and existing reviewer grants. Only one Premium session is active at a time. Android includes no web checkout.

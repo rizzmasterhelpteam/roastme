@@ -22,3 +22,8 @@ export function corsHeaders(request: Request) {
   }
   return headers;
 }
+
+// This scopes the rewarded-ad API to the installed WebView; it is not SSV.
+export function isNativeOrigin(request: Request) {
+  return (process.env.NATIVE_APP_ORIGINS || "https://localhost").split(",").map(s => s.trim()).includes(request.headers.get("origin") || "");
+}

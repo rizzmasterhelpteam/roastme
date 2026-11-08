@@ -64,6 +64,7 @@ import { chatAccount, restoreChat, rememberChat, freshPersonaChat, sameConversat
 import { Controls } from "./controls";
 import { Button } from "./ui/button";
 import { personas, findPersona, type Roast } from "@/lib/personas";
+import { webPrices, webBillingAction } from "@/lib/web-billing-client";
 import { reportReasons } from "@/lib/validation";
 import { replyLanguages, languageLabels } from "@/lib/languages";
 import { playSound, unlockAudio } from "@/lib/feedback";
@@ -206,8 +207,7 @@ export function OutOfCredits({ close }: { close: () => void }) {
         </div>
         <h3>Keep the roasts coming.</h3>
         <p>
-          Get more credits with a rewarded ad, or go Premium for unlimited
-          roasts.
+          {isNative() ? "Watch a rewarded ad or go Premium for unlimited roasts." : "Go Premium for unlimited roasts, or come back after the daily credit reset."}
         </p>
         <div className="credit-modal-actions">
           <button
@@ -224,7 +224,7 @@ export function OutOfCredits({ close }: { close: () => void }) {
             </span>
             <ChevronRight size={17} />
           </button>
-          {!state.premium && state.credits === 0 && <button
+          {isNative() && !state.premium && state.credits === 0 && <button
             type="button"
             className="credit-modal-option"
             disabled={busy}
@@ -1021,7 +1021,7 @@ function InstaChatScreen({
               <p>No credits left. Keep the roasts coming.</p>
               <div className="chat-credit-offer-actions">
                 <button type="button" onClick={() => setPremiumOpen(true)}><b>Go Premium</b><small>Unlimited roasts</small></button>
-                <button type="button" disabled={adBusy} onClick={() => void runAd(async () => { await api("rewards/ad", {}); toast("5 credits added."); })}><b>{adBusy ? "Loading…" : "Watch an ad"}</b><small>+5 credits</small></button>
+                {isNative() && <button type="button" disabled={adBusy} onClick={() => void runAd(async () => { await api("rewards/ad", {}); toast("5 credits added."); })}><b>{adBusy ? "Loading…" : "Watch an ad"}</b><small>+5 credits</small></button>}
               </div>
               <small>Free credits reset at 00:00 UTC.</small>
             </div>
@@ -3208,7 +3208,7 @@ function Rewards() {
             <Check size={17} /> Automatically resets at 00:00 UTC
           </div>
         </div>
-        <div className="reward-card ad-reward">
+        {isNative() && !state.premium && state.credits === 0 && <div className="reward-card ad-reward">
           <div className="reward-graphic">
             <Clapperboard size={65} />
             <Zap size={23} />
@@ -3234,10 +3234,10 @@ function Rewards() {
           </Button>
           <small>
             {isNative() && process.env.NEXT_PUBLIC_ADMOB_REWARDED_ID
-              ? "Credits arrive after server verification"
+              ? "Credits arrive after the ad is completed"
               : "Rewarded ads not configured yet"}
           </small>
-        </div>
+        </div>}
       </div>
       <div className="streak-card">
         <div>
@@ -3296,8 +3296,10 @@ function Rewards() {
 }
 
 function Premium({ inModal = false }: { inModal?: boolean }) {
-  const { api, state, ready } = useApp();
+  const { api, state, ready, toast } = useApp();
   const router = useRouter();
+  const search = useSearchParams();
+  const [returnStatus, setReturnStatus] = useState("");
   const [plan, setPlan] = useState("monthly");
   const [storePrices, setStorePrices] = useState<Record<string, string>>({});
   const [storeReady, setStoreReady] = useState(false);
@@ -3305,10 +3307,19 @@ function Premium({ inModal = false }: { inModal?: boolean }) {
   const storeEnabled =
     isNative() && !!apiOrigin();
   useEffect(() => {
-    if (!storeEnabled || !ready) return;
+    if (!ready || (isNative() && !storeEnabled)) return;
     let alive = true;
     setStoreReady(false);
     setPricesLoaded(false);
+    if (!isNative()) {
+      void webPrices(api).then(result => {
+        if (alive) {
+          setStoreReady(result.configured);
+          setStorePrices(Object.fromEntries(result.products.map(p => [p.plan, p.priceString])));
+        }
+      }).catch(() => {}).finally(() => { if (alive) setPricesLoaded(true); });
+      return () => { alive = false; };
+    }
     void import("@/lib/supabase")
       .then(async ({ browserSupabase }) => {
         const session = await browserSupabase()?.auth.getSession();
@@ -3329,7 +3340,23 @@ function Premium({ inModal = false }: { inModal?: boolean }) {
     return () => {
       alive = false;
     };
-  }, [storeEnabled, ready, state.accountId]);
+  }, [storeEnabled, ready, state.accountId, api]);
+  useEffect(() => {
+    if (isNative() || !ready || state.guest || search.get("checkout") !== "return") return;
+    let cancelled = false;
+    const subscriptionId = search.get("subscription_id") || undefined;
+    setReturnStatus("Checking your subscription…");
+    void (async () => {
+      try {
+        const result = await webBillingAction(api, "restore", { subscriptionId });
+        if (cancelled) return;
+        setReturnStatus((result.state as { premium?: boolean } | undefined)?.premium ? "Premium is active on your account, on web and Android." : "Payment is still processing. Use Refresh access to check again.");
+      } catch (error) {
+        if (!cancelled) setReturnStatus(error instanceof Error ? error.message : "Could not confirm the payment. Use Refresh access to retry.");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [ready, state.guest, state.accountId, search, api]);
   const { busy, run } = useAction();
   return (
     <div className="screen-narrow premium-page">
@@ -3368,13 +3395,11 @@ function Premium({ inModal = false }: { inModal?: boolean }) {
         {[
           {
             id: "weekly",
-            price: "4.99",
             unit: "week",
             label: "A taste of the heat",
           },
           {
             id: "monthly",
-            price: "15.99",
             unit: "month",
             label: "Commit to the character development",
           },
@@ -3388,12 +3413,12 @@ function Premium({ inModal = false }: { inModal?: boolean }) {
             <span className="radio-dot" />
             <span>
               <b>
-                {storeEnabled ? storePrices[p.id] || (pricesLoaded ? "Unavailable" : "Loading…") : `$${p.price}`}
+                {storePrices[p.id] || (pricesLoaded ? "Unavailable" : "Loading…")}
                 <small> / {p.unit}</small>
               </b>
               <small>Billed {p.id}</small>
             </span>
-            {p.id === "monthly" && (
+            {isNative() && p.id === "monthly" && (
               <span className="best-value">BEST VALUE</span>
             )}
           </button>
@@ -3401,23 +3426,27 @@ function Premium({ inModal = false }: { inModal?: boolean }) {
       </div>
       <Button
         className="wide"
-        disabled={busy || (!state.guest && storeEnabled && (!storeReady || !storePrices[plan]))}
-        onClick={() => state.guest ? router.push("/sign-in") : void run(() => api("billing/checkout", { plan }))}
+        disabled={busy || state.premium || (!state.guest && (!storeReady || !storePrices[plan]))}
+        onClick={() => state.guest ? router.push("/sign-in") : void run(() => isNative() ? api("billing/checkout", { plan }) : webBillingAction(api, "checkout", { plan }))}
       >
         <Crown size={19} />
-        {state.premium ? "You’re already Premium" : state.guest ? "Sign in to upgrade" : storeEnabled && pricesLoaded && !storeReady ? "Subscriptions unavailable" : "Unlock Premium"}
+        {state.premium ? "You’re already Premium" : state.guest ? "Sign in to upgrade" : pricesLoaded && !storeReady ? "Subscriptions unavailable" : "Unlock Premium"}
         <ArrowRight size={18} />
       </Button>
       <p className="paywall-note">
-        {storeEnabled && storeReady
-          ? "Billed through Google Play. Auto-renews until cancelled in Play subscriptions."
+        {storeReady
+          ? isNative() ? "Billed through Google Play. Auto-renews until cancelled in Play subscriptions." : "Secure web checkout. Auto-renews until cancelled. Final currency and any taxes are shown at checkout."
           : "Subscriptions are not configured. No payment is taken."}
         <br />
         Fair use and abuse protection apply. *Priority when available.
       </p>
+      {returnStatus && <p className="notice" role="status">{returnStatus}</p>}
       <div className="paywall-links">
-        <button onClick={() => void run(() => api("billing/restore", {}))}>
-          Restore purchases
+        <button disabled={busy} onClick={() => void run(async () => {
+          const result = isNative() ? await api(state.premiumProviders?.includes("dodo") ? "state" : "billing/restore", state.premiumProviders?.includes("dodo") ? undefined : {}) : await webBillingAction(api, "restore");
+          toast(((result.state || result) as { premium?: boolean }).premium ? "Premium access refreshed." : "No active subscription found for this account.");
+        })}>
+          {isNative() ? "Restore purchases" : "Refresh access"}
         </button>
         <Link href="/terms">Terms</Link>
         <Link href="/privacy">Privacy</Link>
@@ -4056,7 +4085,7 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
   );
 }
 function Subscription() {
-  const { state, api, signout } = useApp();
+  const { state, api, signout, toast } = useApp();
   const { busy, run } = useAction();
   return (
     <div className="screen-narrow">
@@ -4079,16 +4108,22 @@ function Subscription() {
       </div>
       <div className="settings-list">
         <Row
-          onClick={() => void run(() => api("billing/manage", {}))}
+          onClick={() => void run(async () => {
+            if (isNative() && state.premiumProviders?.includes("dodo") && !state.premiumProviders.includes("google_play")) {
+              toast("This subscription is managed with your original web billing provider.");
+              return;
+            }
+            return isNative() ? api("billing/manage", {}) : webBillingAction(api, "manage");
+          })}
           icon={<SettingsIcon />}
           title="Manage subscription"
           desc="View, change, or cancel your plan"
         />
         <Row
-          onClick={() => void run(() => api("billing/restore", {}))}
+          onClick={() => void run(() => isNative() ? api(state.premiumProviders?.includes("dodo") ? "state" : "billing/restore", state.premiumProviders?.includes("dodo") ? undefined : {}) : webBillingAction(api, "restore"))}
           icon={<RefreshCw />}
-          title="Restore purchases"
-          desc="Restore access through your billing provider"
+          title={isNative() ? "Restore purchases" : "Refresh access"}
+          desc="Refresh Premium for this account"
         />
         <Row
           href="/help"
@@ -4105,8 +4140,7 @@ function Subscription() {
       </div>
       <p className="notice">
         <Info size={18} />
-        Subscription checkout is not connected yet. You cannot be charged in
-        this version.
+        Premium follows your signed-in account across web and Android. Manage cancellation with the provider you purchased from. Only one active Premium session can be used at a time.
       </p>
       <Settings embedded />
       <Button

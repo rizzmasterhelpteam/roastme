@@ -127,6 +127,7 @@ export type Roast = {
 };
 export type AppState = {
   accountId?: string;
+  premiumProviders?: string[];
   credits: number;
   premium: boolean;
   email: string | null;
