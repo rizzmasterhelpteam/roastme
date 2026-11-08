@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@/lib/web-billing-client": path.resolve("native/web-billing.ts"),
+        "@/components/website/blog-navigation": path.resolve("native/blog-navigation.tsx"),
         "@": path.resolve("src"),
         "next/link": path.resolve("native/link.tsx"),
         "next/navigation": path.resolve("native/navigation.ts"),

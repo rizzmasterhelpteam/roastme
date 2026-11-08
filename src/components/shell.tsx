@@ -21,6 +21,7 @@ import { useApp } from "./app-provider";
 import { Portrait } from "./art";
 import { Controls } from "./controls";
 import { OutOfCredits } from "./screens";
+import { BlogNavigationLink } from "@/components/website/blog-navigation";
 
 const nav = [
   { href: "/", label: "Roast room", icon: Flame },
@@ -87,6 +88,7 @@ export function Shell({ children, websiteLinks }: { children: React.ReactNode; w
               )}
             </Link>
           ))}
+          <BlogNavigationLink active={path === "/blog"} />
         </nav>
         <div className="sidebar-premium">
           <div className="mini-crown">
