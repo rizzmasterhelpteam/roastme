@@ -44,7 +44,10 @@ export async function nativePlans(userId: string) {
   );
   if (status.status !== 200)
     throw new Error(status.data.error || "Unable to load subscription plans.");
-  return loadPlayPlans(status.data.products);
+  return {
+    ...(await loadPlayPlans(status.data.products)),
+    configured: status.data.configured === true,
+  };
 }
 export async function nativeRequest(
   path: string,

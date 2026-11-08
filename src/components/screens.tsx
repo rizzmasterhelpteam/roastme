@@ -3297,13 +3297,18 @@ function Rewards() {
 
 function Premium({ inModal = false }: { inModal?: boolean }) {
   const { api, state, ready } = useApp();
+  const router = useRouter();
   const [plan, setPlan] = useState("monthly");
   const [storePrices, setStorePrices] = useState<Record<string, string>>({});
+  const [storeReady, setStoreReady] = useState(false);
+  const [pricesLoaded, setPricesLoaded] = useState(false);
   const storeEnabled =
     isNative() && !!apiOrigin();
   useEffect(() => {
     if (!storeEnabled || !ready) return;
     let alive = true;
+    setStoreReady(false);
+    setPricesLoaded(false);
     void import("@/lib/supabase")
       .then(async ({ browserSupabase }) => {
         const session = await browserSupabase()?.auth.getSession();
@@ -3311,17 +3316,20 @@ function Premium({ inModal = false }: { inModal?: boolean }) {
         if (!id) return;
         const { nativePlans } = await import("@/lib/native/client");
         const plans = await nativePlans(id);
-        if (alive)
+        if (alive) {
+          setStoreReady(plans.configured);
           setStorePrices({
             weekly: plans.weekly?.product.priceString || "",
             monthly: plans.monthly?.product.priceString || "",
           });
+        }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => { if (alive) setPricesLoaded(true); });
     return () => {
       alive = false;
     };
-  }, [storeEnabled, ready]);
+  }, [storeEnabled, ready, state.accountId]);
   const { busy, run } = useAction();
   return (
     <div className="screen-narrow premium-page">
@@ -3380,7 +3388,7 @@ function Premium({ inModal = false }: { inModal?: boolean }) {
             <span className="radio-dot" />
             <span>
               <b>
-                {storeEnabled ? storePrices[p.id] || "Loading…" : `$${p.price}`}
+                {storeEnabled ? storePrices[p.id] || (pricesLoaded ? "Unavailable" : "Loading…") : `$${p.price}`}
                 <small> / {p.unit}</small>
               </b>
               <small>Billed {p.id}</small>
@@ -3393,15 +3401,15 @@ function Premium({ inModal = false }: { inModal?: boolean }) {
       </div>
       <Button
         className="wide"
-        disabled={busy || (storeEnabled && !storePrices[plan])}
-        onClick={() => void run(() => api("billing/checkout", { plan }))}
+        disabled={busy || (!state.guest && storeEnabled && (!storeReady || !storePrices[plan]))}
+        onClick={() => state.guest ? router.push("/sign-in") : void run(() => api("billing/checkout", { plan }))}
       >
         <Crown size={19} />
-        {state.premium ? "You’re already Premium" : "Unlock Premium"}
+        {state.premium ? "You’re already Premium" : state.guest ? "Sign in to upgrade" : storeEnabled && pricesLoaded && !storeReady ? "Subscriptions unavailable" : "Unlock Premium"}
         <ArrowRight size={18} />
       </Button>
       <p className="paywall-note">
-        {storeEnabled
+        {storeEnabled && storeReady
           ? "Billed through Google Play. Auto-renews until cancelled in Play subscriptions."
           : "Subscriptions are not configured. No payment is taken."}
         <br />
