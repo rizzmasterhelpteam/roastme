@@ -60,6 +60,7 @@ test("OpenRouter transport preserves JSON replies and never returns reasoning", 
     exclude: true,
   });
   assert.equal(requests[0].body.response_format.type, "json_schema");
+  assert.deepEqual(requests[0].body.plugins, [{ id: "response-healing" }]);
   assert.equal(requests[0].body.response_format.json_schema.strict, true);
   assert.deepEqual(
     requests[0].body.response_format.json_schema.schema.required,
