@@ -44,12 +44,34 @@ export function restoreChat(
 export function rememberChat(
   store: Store | undefined,
   chat: ReturnType<typeof restoreChat>,
+  activate = true,
 ) {
   try {
-    store?.setItem(`roast-persona:${chat.account}`, chat.persona);
+    if (activate) store?.setItem(`roast-persona:${chat.account}`, chat.persona);
     store?.setItem(
       `roast-session:${chat.account}:${chat.persona}`,
       chat.sessionId,
     );
   } catch {}
+}
+
+export async function freshPersonaChat(
+  target: ReturnType<typeof restoreChat>,
+  clear: (body: { sessionId: string; persona: string }) => Promise<unknown>,
+) {
+  // Capture the persona and session before awaiting network work.
+  const next = { ...target, sessionId: crypto.randomUUID() };
+  await clear({ sessionId: target.sessionId, persona: target.persona });
+  return next;
+}
+
+export function sameConversation(
+  a: ReturnType<typeof restoreChat>,
+  b: ReturnType<typeof restoreChat>,
+) {
+  return (
+    a.account === b.account &&
+    a.persona === b.persona &&
+    a.sessionId === b.sessionId
+  );
 }

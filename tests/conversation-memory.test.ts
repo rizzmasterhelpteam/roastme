@@ -166,6 +166,75 @@ test("database notes commit with credits, reject guests/client access, and inval
       "Fictional parrot Pickle steals socks.",
     );
     await finish(owner, session, "Fictional parrot Pickle steals spoons.");
+    // Legacy app versions could share a session between personas. Fresh chat
+    // must leave the other persona's notes, messages and guest revision intact.
+    const savedGrandma = (
+      await db.query<{ source_id: string }>(
+        "select source_id from public.conversation_memories where user_id=$1 and persona='grandma'",
+        [owner],
+      )
+    ).rows[0];
+    const savageMessage = (
+      await db.query<{ id: string }>(
+        "insert into public.messages(user_id,session_id,request_id,prompt,content,persona,input_type,credits_used) values($1,$2,$3,'Synthetic Savage prompt','Synthetic Savage reply','savage','chat',0) returning id",
+        [owner, session, randomUUID()],
+      )
+    ).rows[0];
+    await db.query(
+      "insert into public.conversation_memories(user_id,session_id,persona,notes,source_id) values($1,$2,'savage','Keep Savage context',$3)",
+      [owner, session, savageMessage.id],
+    );
+    await db.query(
+      "select public.clear_persona_conversation($1,$2,'grandma')",
+      [other, session],
+    );
+    assert.equal(
+      (
+        await db.query(
+          "select * from public.conversation_memories where user_id=$1",
+          [owner],
+        )
+      ).rows.length,
+      2,
+    );
+    await db.query(
+      "select public.clear_persona_conversation($1,$2,'grandma')",
+      [owner, session],
+    );
+    assert.deepEqual(
+      (
+        await db.query<{ persona: string }>(
+          "select persona from public.conversation_memories where user_id=$1",
+          [owner],
+        )
+      ).rows,
+      [{ persona: "savage" }],
+    );
+    assert.equal(
+      (
+        await db.query<{ memory_revision: number }>(
+          "select memory_revision from public.roast_sessions where id=$1",
+          [session],
+        )
+      ).rows[0].memory_revision,
+      0,
+    );
+    assert.equal(
+      (
+        await db.query("select id from public.messages where session_id=$1", [
+          session,
+        ])
+      ).rows.length,
+      3,
+    );
+    await db.query(
+      "insert into public.conversation_memories(user_id,session_id,persona,notes,source_id) values($1,$2,'grandma','Fictional parrot Pickle steals spoons.',$3)",
+      [owner, session, savedGrandma.source_id],
+    );
+    await db.query(
+      "delete from public.conversation_memories where user_id=$1 and persona='savage'",
+      [owner],
+    );
     assert.equal(
       (
         await db.query<{ notes: string }>(
@@ -255,6 +324,13 @@ test("database notes commit with credits, reject guests/client access, and inval
     );
     await assert.rejects(
       db.query("select public.clear_conversation_memory($1,$2)", [
+        owner,
+        session,
+      ]),
+      /permission denied/,
+    );
+    await assert.rejects(
+      db.query("select public.clear_persona_conversation($1,$2,'grandma')", [
         owner,
         session,
       ]),

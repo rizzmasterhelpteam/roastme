@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   useEffect,
   useLayoutEffect,
@@ -60,7 +60,7 @@ import {
 } from "lucide-react";
 import { useApp, ClientError } from "./app-provider";
 import { Portrait } from "./art";
-import { chatAccount, restoreChat, rememberChat } from "@/lib/chat-selection";
+import { chatAccount, restoreChat, rememberChat, freshPersonaChat, sameConversation } from "@/lib/chat-selection";
 import { Controls } from "./controls";
 import { Button } from "./ui/button";
 import { personas, findPersona, type Roast } from "@/lib/personas";
@@ -142,10 +142,12 @@ function Modal({
   title,
   children,
   onClose,
+  dismissible = true,
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
+  dismissible?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
@@ -157,9 +159,9 @@ function Modal({
     <dialog
       ref={ref}
       className="modal"
-      onCancel={onClose}
+      onCancel={(event) => { event.preventDefault(); if (dismissible) onClose(); }}
       onClick={(e) => {
-        if (e.target === ref.current) onClose();
+        if (dismissible && e.target === ref.current) onClose();
       }}
     >
       <div className="modal-head">
@@ -167,6 +169,7 @@ function Modal({
         <button
           className="icon-button"
           aria-label="Close dialog"
+          disabled={!dismissible}
           onClick={onClose}
         >
           <X size={20} />
@@ -483,12 +486,18 @@ function InstaChatScreen({
   initialPersonaId?: string;
 }) {
   const { state, api, level, chaos, toast, ready } = useApp();
+  const router = useRouter(), pathname = usePathname();
   const stores = () => {
     try { return [localStorage, sessionStorage] as const; } catch { return []; }
   };
   const [chat, setChat] = useState(() => restoreChat(state, initialPersonaId, ...stores()));
   const { persona: selected, sessionId } = chat;
-  const setSelected = (id: string) => setChat(restoreChat(state, id, ...stores()));
+  const setSelected = (id: string) => {
+    const next = restoreChat(state, id, ...stores());
+    rememberChat(stores()[0], next);
+    setChat(next);
+    if (pathname !== `/chat/${id}`) router.replace(`/chat/${id}`);
+  };
   const setSessionId = (id: string) => setChat(prev => ({ ...prev, sessionId: id }));
   const scope = `${chatAccount(state)}:${initialPersonaId || ""}`;
   const scopeRef = useRef(scope);
@@ -503,6 +512,17 @@ function InstaChatScreen({
   const [attachedImage, setAttachedImage] = useState("");
   const [attachedFileName, setAttachedFileName] = useState("");
   const [newChatConfirmOpen, setNewChatConfirmOpen] = useState(false);
+  const [resettingChat, setResettingChat] = useState(false);
+  const resettingRef = useRef(false);
+  const activeChatRef = useRef(chat);
+  activeChatRef.current = chat;
+  const activeAccountRef = useRef(chatAccount(state));
+  activeAccountRef.current = chatAccount(state);
+  const mountedChatRef = useRef(true);
+  useEffect(() => {
+    mountedChatRef.current = true;
+    return () => { mountedChatRef.current = false; };
+  }, []);
   const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
   const endRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -570,27 +590,34 @@ function InstaChatScreen({
   ]);
 
   async function startNewChat() {
+    if (busy || resettingRef.current || !ready) return;
+    const target = { ...chat };
+    resettingRef.current = true;
+    setResettingChat(true);
     try {
-      if (sessionId) await api("memory/clear", { sessionId, persona: selected });
+      const next = await freshPersonaChat(target, body => api("memory/clear", body));
+      const stillActive = mountedChatRef.current && activeAccountRef.current === target.account && sameConversation(activeChatRef.current, target);
+      // Other personas keep their session pointers; navigation during the request
+      // must not select or reset a different conversation.
+      rememberChat(stores()[0], next, stillActive);
+      if (!stillActive) return;
+      setChat(current => sameConversation(current, target) ? next : current);
+      setNewChatConfirmOpen(false);
+      setBlocked(false);
+      setLikedMap({});
+      setPrompt("");
+      setAttachedImage("");
+      setAttachedFileName("");
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
+      if (pathname?.startsWith("/chat/") && pathname !== `/chat/${target.persona}`)
+        router.replace(`/chat/${target.persona}`);
+      toast(`Started a fresh conversation with ${findPersona(target.persona).name}.`);
     } catch (error) {
-      toast(error instanceof Error ? error.message : "Unable to reset the chat. Please retry.");
-      return;
+      if (mountedChatRef.current) toast(error instanceof Error ? error.message : "Unable to reset the chat. Please retry.");
+    } finally {
+      resettingRef.current = false;
+      if (mountedChatRef.current) setResettingChat(false);
     }
-    setNewChatConfirmOpen(false);
-    const nextSession = crypto.randomUUID();
-    try {
-      rememberChat(stores()[0], { ...chat, sessionId: nextSession });
-    } catch {}
-    setSessionId(nextSession);
-    setBlocked(false);
-    setLikedMap({});
-    setPrompt("");
-    setAttachedImage("");
-    setAttachedFileName("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
-    toast(`Started a fresh conversation with ${p.name}.`);
   }
 
   async function handleImageAttach(file?: File) {
@@ -640,7 +667,7 @@ function InstaChatScreen({
   }
 
   async function submit(value = prompt) {
-    if (busy || !ready || !sessionId) return;
+    if (busy || resettingRef.current || !ready || !sessionId) return;
     const hasImg = Boolean(attachedImage);
     const cost = hasImg ? 2 : 1;
     if (!state.premium && state.credits < cost) {
@@ -781,7 +808,7 @@ function InstaChatScreen({
             type="button"
             className="insta-icon-btn"
             onClick={() => setNewChatConfirmOpen(true)}
-            disabled={busy}
+            disabled={busy || resettingChat}
             title="Start fresh conversation"
             aria-label="Start fresh chat"
           >
@@ -821,6 +848,7 @@ function InstaChatScreen({
                       type="button"
                       role="option"
                       aria-selected={isCur}
+                      disabled={resettingChat}
                       className={`persona-card insta-dropdown-item ${isCur ? "selected" : ""}`}
                       style={
                         { "--persona-color": item.color } as React.CSSProperties
@@ -1126,7 +1154,7 @@ function InstaChatScreen({
 
             <button
               type="submit"
-              disabled={busy || !ready || !sessionId || (!prompt.trim() && !attachedImage)}
+              disabled={busy || resettingChat || !ready || !sessionId || (!prompt.trim() && !attachedImage)}
               aria-label="Send message"
               className={`insta-send-btn ${prompt.trim() || attachedImage ? "active" : ""}`}
             >
@@ -1159,8 +1187,9 @@ function InstaChatScreen({
       )}
       {newChatConfirmOpen && (
         <Modal
-          title="Start a fresh chat?"
-          onClose={() => setNewChatConfirmOpen(false)}
+          title={`Start a fresh chat with ${p.name}?`}
+          dismissible={!resettingChat}
+          onClose={() => { if (!resettingRef.current) setNewChatConfirmOpen(false); }}
         >
           <p className="muted">
             Clear this conversation from the chat view and start a clean one
@@ -1169,12 +1198,14 @@ function InstaChatScreen({
           </p>
           <Button
             variant="outline"
+            type="button"
+            disabled={resettingChat}
             onClick={() => setNewChatConfirmOpen(false)}
           >
             Keep current chat
           </Button>
-          <Button variant="danger" onClick={startNewChat}>
-            <RefreshCw size={17} /> Start fresh chat
+          <Button variant="danger" type="button" disabled={resettingChat} aria-busy={resettingChat} onClick={startNewChat}>
+            <RefreshCw size={17} /> {resettingChat ? "Starting fresh chat…" : "Start fresh chat"}
           </Button>
         </Modal>
       )}

@@ -90,11 +90,13 @@ async function handle(
     }
     if (path === "memory/clear") {
       const sessionId = z.string().uuid().parse(body.sessionId);
+      const persona = generationSchema.shape.persona.parse(body.persona);
       if (!b.demo)
         ensure(
-          await b.db.rpc("clear_conversation_memory", {
+          await b.db.rpc("clear_persona_conversation", {
             p_user: b.id,
             p_session: sessionId,
+            p_persona: persona,
           }),
         );
       return NextResponse.json({ cleared: true });
