@@ -13,7 +13,7 @@ Open http://localhost:3000. With no Supabase configuration, development automati
 
 ## Enable the live backend
 
-1. Copy `.env.example` to `.env.local` and set the Supabase URL, public anon/publishable key, service-role key, Groq key, Google key, and app URL. Set `DEMO_MODE=false`.
+1. Copy `.env.example` to `.env.local` and set the Supabase URL, public anon/publishable key, service-role key, OpenRouter key, Google key, and app URL. Set `DEMO_MODE=false`.
 2. Create a Supabase project and run `supabase/schema.sql` in its SQL editor **once on a new project**. Alternatively apply the supplied initial migration with the Supabase CLI. Do not run both copies. Existing projects require review before applying this schema.
 3. Enable anonymous sign-ins, Google OAuth, and manual identity linking in Supabase Auth. Set the Google OAuth client configuration and the Supabase callback in Google Cloud. Enable email authentication and configure production SMTP.
 4. In Supabase Auth URL configuration, set Site URL to your app origin and add `http://localhost:3000/auth/callback` plus your deployment's `/auth/callback` to allowed redirects.
@@ -21,7 +21,7 @@ Open http://localhost:3000. With no Supabase configuration, development automati
 
 An identity that already belongs to another account cannot be silently merged. The app displays the auth provider's error and preserves the guest identity. A verified operator-assisted account merge is a separate workflow.
 
-OpenAI's Chat Completions endpoint handles text and safety classification using `gpt-6-luna` with low reasoning; Gemini's `generateContent` endpoint handles inline image input. Set the server-only `OPENAI_API_KEY`; models are configurable via `OPENAI_MODEL` and `GOOGLE_MODEL`. Luna with low reasoning does not accept temperature, so chaos is controlled by the existing persona instructions. Images are restricted to JPG, PNG, or WebP, validated by content signature, and limited to 5 MB. Successful live photo roasts are stored in a private Supabase bucket and exposed through short-lived signed URLs.
+OpenRouter's Chat Completions endpoint handles text generation and output safety classification using `deepseek/deepseek-v4-flash-0731`. Set the server-only `OPENROUTER_API_KEY` and optional `OPENROUTER_MODEL` (defaults to that pinned checkpoint). Requests use supported high reasoning for roast generation and low reasoning for safety, with reasoning excluded from returned replies. OpenRouter routes only to providers that support the requested parameters. There is no OpenAI/Luna fallback. Gemini's `generateContent` endpoint handles inline image input via `GEMINI_API_KEY` (or legacy `GOOGLE_API_KEY`) and `GOOGLE_MODEL`. Chaos remains controlled by the existing persona instructions. Images are restricted to JPG, PNG, or WebP, validated by content signature, and limited to 5 MB. Successful live photo roasts are stored in a private Supabase bucket and exposed through short-lived signed URLs.
 
 ## What works now
 
