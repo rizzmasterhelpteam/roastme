@@ -40,7 +40,7 @@ export async function completeText(
         max_tokens: 2048,
         // This checkpoint supports low/high/max/none, not OpenAI's medium.
         // Keep reasoning out of the reply and require JSON/reasoning support.
-        reasoning: { effort: "low", exclude: true },
+        reasoning: { effort: safety ? "none" : "low", exclude: true },
         provider: { require_parameters: true },
         ...(json
           ? {
@@ -153,7 +153,7 @@ export async function completeText(
       generationId: data.id,
       cost: data.usage.cost,
       purpose: safety ? "image_description_safety" : "roast_with_safety",
-      reasoningEffort: "low",
+      reasoningEffort: safety ? "none" : "low",
       attempt,
       budgetedInput: countInputTokens(messages),
       historyTurns: safety

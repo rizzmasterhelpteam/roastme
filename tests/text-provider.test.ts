@@ -76,7 +76,7 @@ test("OpenRouter transport preserves JSON replies and never returns reasoning", 
     ],
   };
   assert.equal(await completeText(messages, true), '{"allowed":true}');
-  assert.equal(requests[1].body.reasoning.effort, "low");
+  assert.equal(requests[1].body.reasoning.effort, "none");
   assert.deepEqual(
     requests[1].body.response_format.json_schema.schema.required,
     ["allowed"],
