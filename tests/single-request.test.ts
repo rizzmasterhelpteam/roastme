@@ -18,7 +18,7 @@ test("real generation uses one request for reply, notes and decision, including 
       count++;
       assert.equal(String(url),'https://openrouter.ai/api/v1/chat/completions');
       const body=JSON.parse(init.body);
-      assert.equal(body.reasoning.effort,'low');
+      assert.equal(body.reasoning.effort,'none');
       assert.deepEqual(body.response_format.json_schema.schema.required,['allowed','reply','notes']);
       return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify({allowed:!blocked,reply:blocked?'':longReply,notes:blocked?'':'Fictional hamster: Pixel.'})}}]});
     };

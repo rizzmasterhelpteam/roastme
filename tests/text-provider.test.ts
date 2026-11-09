@@ -56,7 +56,7 @@ test("OpenRouter transport preserves JSON replies and never returns reasoning", 
   assert.equal(requests[0].body.model, "deepseek/deepseek-v4-flash-0731");
   assert.deepEqual(requests[0].body.messages, messages);
   assert.deepEqual(requests[0].body.reasoning, {
-    effort: "low",
+    effort: "none",
     exclude: true,
   });
   assert.equal(requests[0].body.response_format.type, "json_schema");
