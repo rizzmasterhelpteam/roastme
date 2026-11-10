@@ -66,7 +66,12 @@ test("OpenRouter transport preserves JSON replies and never returns reasoning", 
     requests[0].body.response_format.json_schema.schema.required,
     ["allowed", "reply", "notes"],
   );
-  assert.equal(requests[0].body.provider.require_parameters, true);
+  assert.deepEqual(requests[0].body.provider, {
+    only: ["cohere", "coreweave"],
+    order: ["cohere", "coreweave"],
+    allow_fallbacks: true,
+    require_parameters: true,
+  });
   assert.equal(requests[0].body.max_tokens, 2048);
   assert.equal(requests[0].body.store, undefined);
 

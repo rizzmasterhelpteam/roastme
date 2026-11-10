@@ -41,7 +41,14 @@ export async function completeText(
         // This checkpoint supports low/high/max/none, not OpenAI's medium.
         // Keep reasoning out of the reply and require JSON/reasoning support.
         reasoning: { effort: "none", exclude: true },
-        provider: { require_parameters: true },
+        // Keep text generation on the two selected OpenRouter hosts only.
+        // Cohere is preferred for speed; CoreWeave is the approved fallback.
+        provider: {
+          only: ["cohere", "coreweave"],
+          order: ["cohere", "coreweave"],
+          allow_fallbacks: true,
+          require_parameters: true,
+        },
         ...(json
           ? {
               plugins: [{ id: "response-healing" }],
