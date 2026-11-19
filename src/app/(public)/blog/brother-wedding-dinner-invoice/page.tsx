@@ -4,8 +4,8 @@ import { StoryAd, StoryPoll } from "@/components/website/story-elements";
 
 export const metadata = pageMetadata(
   "/blog/brother-wedding-dinner-invoice",
-  "AITA for Walking Out of a Wedding After Being Handed a $120 Invoice for Dinner?",
-  "I flew across the country, rented a suit, and gave a $300 wedding gift. Then the envelopes arrived at the dinner tables."
+  "AITA for Walking Out of My Brother's Wedding Over a Dinner Bill?",
+  "I flew across the country and gave a $300 gift. Then the envelopes arrived at the dinner tables."
 );
 
 export default function WeddingInvoiceStory() {
@@ -15,144 +15,150 @@ export default function WeddingInvoiceStory() {
         ← Back to all stories
       </Link>
 
-      <p className="journal-label">FICTIONAL DILEMMA · FAMILY & WEDDING DRAMA · 4 MIN READ</p>
-      <h1>AITA for Walking Out of My Brother’s Wedding After Being Handed a $120 Invoice for Dinner?</h1>
+      <p className="journal-label">AITA · FAMILY DRAMA · 4 MIN READ</p>
+      <h1>AITA for walking out of my brother&apos;s wedding after being handed a $120 invoice for dinner?</h1>
       <p className="story-deck">
-        I flew across the country and gave a $300 gift. Then the envelopes arrived at the table.
+        I spent over $1,400 to be there and put $300 cash in their card box. Then the envelopes showed up at the reception.
       </p>
 
-      {/* Featured Image */}
-      <picture>
-        <img
-          src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80"
-          alt="Elegant wedding table setting with place cards and dinnerware"
-          width="1200"
-          height="800"
-          loading="eager"
-        />
-      </picture>
+      {/* Featured Header Image */}
+      <figure className="story-figure">
+        <picture>
+          <img
+            src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80"
+            alt="Wedding reception dinner table with place cards and glassware"
+            width="1200"
+            height="800"
+            loading="eager"
+          />
+        </picture>
+      </figure>
 
       <div className="story-body">
         <p>
-          My older brother, Mark (31M), got married this past Saturday to his fiancée of three years, Chloe (29F). I genuinely like Chloe as a person, but she has always possessed an expensive aesthetic taste that doesn&apos;t quite match reality.
+          My older brother Mark got married last Saturday to his girlfriend of three years, Chloe. I like Chloe fine, but she has always had champagne taste on a beer budget.
         </p>
 
         <p>
-          When they announced their engagement last fall, Mark privately told me they had secured a breathtaking botanical conservatory for the reception. I was thrilled for them. I booked cross-country flights (\$580), rented the tailored suit requested for the wedding party (\$210), stayed in their designated block hotel (\$340), and dropped a card with \$300 cash into their card box during the post-ceremony cocktail hour.
+          When they got engaged last fall, Mark called me all excited to say they booked a high-end botanical venue for the reception. I wanted to support him, so I didn&apos;t hold back. I bought cross-country flights for $580, paid $210 to rent the specific tailored suit he asked the wedding party to wear, stayed two nights in their block hotel for $340, and dropped an envelope with $300 cash into their card box during cocktail hour.
         </p>
 
         <p>
-          Between travel, attire, and gifts, I was well over \$1,400 invested in supporting my brother&apos;s milestone day. The ceremony was moving, the photos on the lawn were sunny, and spirits were soaring.
+          All in, I was down about $1,400 just to be there. The ceremony was great, the weather held up, and everyone was in high spirits.
         </p>
 
         <p>
-          Then we sat down in the grand ballroom for the formal dinner.
+          Then we sat down in the main room for dinner.
         </p>
 
-        {/* Mid-Story Image #1 (Around 250-300 words) */}
-        <picture>
-          <img
-            src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80"
-            alt="Wedding guests seated at an opulent dinner hall during reception"
-            width="1200"
-            height="800"
-            loading="lazy"
-          />
-        </picture>
+        {/* In-article Image 1 */}
+        <figure className="story-figure">
+          <picture>
+            <img
+              src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80"
+              alt="Guests seated at a banquet dinner table"
+              width="1200"
+              height="800"
+              loading="lazy"
+            />
+          </picture>
+        </figure>
 
         <p>
-          As the bridal party made their grand entrance and the cheers subsided, three venue coordinators began walking through the tables. Instead of pouring wine or serving bread, they began placing crisp, cream-colored envelopes directly in front of each guest&apos;s plate.
+          Right after the wedding party made their entrance, the staff started walking between the tables. Instead of pouring drinks or bringing out bread, they began placing small cream-colored envelopes right beside everyone&apos;s forks.
         </p>
 
         <p>
-          I opened mine expecting a personalized thank-you note or a souvenir menu. Instead, printed on gold-foiled cardstock was an itemized receipt:
+          I opened mine thinking it was a thank-you note or a souvenir menu card.
+        </p>
+
+        <p>
+          It was an invoice.
         </p>
 
         <blockquote className="story-quote">
           <p>
-            <em>&ldquo;To our cherished guests: In celebration of our union, tonight&apos;s five-course culinary experience is curated by Chef Julian. Guest Contribution: $120.00 per plate. Venmo / Cash accepted at the reception desk.&rdquo;</em>
+            &ldquo;To our guests: Tonight&apos;s five-course meal is curated by a private chef. Guest contribution: $120.00 per plate. Venmo / Cash accepted at the welcome desk.&rdquo;
           </p>
         </blockquote>
 
         <p>
-          I blinked, convinced it was some sort of inside joke or a theatrical comedy bit. But I glanced at the tables around me. Our elderly aunt was putting on her reading glasses with a horrified squint. Two of our younger cousins, both working minimum-wage summer internships, were staring at each other in utter disbelief.
+          I honestly thought it was a prank until I looked around the table. My 68-year-old aunt was putting on her glasses with a look of pure confusion. Two of our younger cousins, who are still in college working summer jobs, were staring at each other with their jaws on the floor.
         </p>
 
-        {/* 30% MARK AD: ROAST ME AI REALITY CHECK */}
+        {/* 30% Mark Ad */}
         <StoryAd variant="mid" />
 
         <p>
-          I leaned over toward Mark when he came by our table to say hello. I whispered, &ldquo;Mark, what is this envelope? Did the caterer make a catastrophic printing error?&rdquo;
+          When Mark came over to our table to greet people, I pulled him aside and asked what was going on. I literally asked him if the caterer made a printing mistake.
         </p>
 
         <p>
-          Mark flushed bright red, cleared his throat, and lowered his voice. &ldquo;Look, Chloe had her heart set on this Michelin-rated catering company, but it pushed the reception budget \$14,000 over our ceiling. Chloe’s planner suggested this. We figured \$120 is what people would pay for a nice dinner out anyway.&rdquo;
+          Mark got defensive immediately. He flushed red and whispered, &ldquo;Chloe really wanted this chef, but the food ended up $14,000 over our budget. Her planner said people pay $120 for a nice dinner out anyway, so we figured guests wouldn&apos;t mind chipping in.&rdquo;
         </p>
 
         <p>
-          &ldquo;Mark, you invited people to celebrate your wedding. You don&apos;t charge admission to a banquet after people bought flights and brought gifts,&rdquo; I said.
+          I told him, &ldquo;Mark, you invited people to a wedding. You don&apos;t charge admission to dinner after people bought flights and brought gifts.&rdquo;
         </p>
 
         <p>
-          &ldquo;Please don&apos;t cause a scene,&rdquo; he hissed. &ldquo;If you can&apos;t cover it right now, Chloe said we can do installments next week.&rdquo;
+          He looked annoyed and told me, &ldquo;If you can&apos;t pay it right now, Chloe said you can pay in installments next week. Just don&apos;t make a scene.&rdquo;
         </p>
 
         <p>
-          <em>Installments for a wedding dinner I never agreed to buy.</em>
+          <em>Installments. For a dinner at my own brother&apos;s wedding.</em>
         </p>
 
         <p>
-          That was the breaking point. I stood up from the table. Without raising my voice, I walked over to the gift table by the entryway, picked up the card envelope with my name on it containing the \$300 cash, slipped it back into my breast pocket, and walked out of the conservatory into the parking lot.
+          That was it for me. I stood up, walked over to the gift table near the entrance, found the envelope with my name on it containing the $300 cash, put it in my pocket, and walked out to my car.
         </p>
 
-        {/* Image #2: The Emotional Fallout */}
-        <picture>
-          <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80"
-            alt="Person holding phone with concerned expression while contemplating a difficult situation"
-            width="1200"
-            height="800"
-            loading="lazy"
-          />
-        </picture>
+        {/* In-article Image 2 */}
+        <figure className="story-figure">
+          <picture>
+            <img
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80"
+              alt="Person looking down at phone screen while contemplating"
+              width="1200"
+              height="800"
+              loading="lazy"
+            />
+          </picture>
+        </figure>
 
         <p>
-          I drove straight to an all-night diner three miles down the highway, ordered a \$14 bacon cheeseburger and a milkshake, and ate in sweet, peaceful silence.
-        </p>
-
-        <p>
-          Within twenty minutes, my phone began vibrating like an electric drill.
+          I drove down the road to a normal 24-hour diner, ordered a burger and fries, and ate in peace.
         </p>
 
         <p>
-          Chloe sent a barrage of texts accusing me of being &ldquo;a cheap, jealous saboteur&rdquo; who tried to ruin her wedding aesthetic and humiliate her in front of her sorority sisters. She noticed my card was missing from the gift table and called it &ldquo;literal theft.&rdquo;
+          About twenty minutes later, my phone started ringing off the hook.
         </p>
 
         <p>
-          My mother called me in tears, saying that even if Chloe made a questionable decision, family is supposed to swallow their pride and support each other. &ldquo;You’re his younger brother,&rdquo; she sobbed. &ldquo;You should have just swiped your card and talked to him on Monday.&rdquo;
+          Chloe sent me four furious texts in a row. She noticed my card was missing from the gift table and called it &ldquo;literal theft.&rdquo; She said I humiliated her in front of her family and ruined her wedding night.
         </p>
 
         <p>
-          Mark sent me a single text: <em>&ldquo;You humiliated me at my own wedding over a hundred bucks. We’re done until you apologize to Chloe and wire the money.&rdquo;</em>
+          My mom called me crying, saying that even if Chloe made a weird choice, family always sticks together. She told me I should have just paid the $120 and talked to Mark about it after the honeymoon.
         </p>
 
         <p>
-          Meanwhile, my college cousins texted me from the bathroom: <em>&ldquo;We didn&apos;t have \$120 in our checking accounts. We had to Venmo our mom to spot us so we wouldn&apos;t get escorted out. You were the only smart one who escaped.&rdquo;</em>
+          Then Mark texted me: <em>&ldquo;You walked out over a hundred bucks. We&apos;re done until you apologize to Chloe and send the money.&rdquo;</em>
         </p>
 
-        {/* 80% MARK AD: ROAST ME AI ROAST BATTLE */}
+        <p>
+          Meanwhile, my college cousins texted me from the bathroom. They didn&apos;t have $120 in their checking accounts and had to call their parents to transfer them money so they wouldn&apos;t be embarrassed in front of the room.
+        </p>
+
+        {/* 80% Mark Ad */}
         <StoryAd variant="bottom" />
 
         <p>
-          It has been three days. Half of my extended family is calling me selfish, stubborn, and petty for taking back my gift and abandoning my brother on his wedding night.
+          It&apos;s been three days now. Half the family is telling me I was childish for taking back my gift and leaving. The other half is quietly agreeing that handing out invoices at a wedding reception is the tackiest thing they&apos;ve ever seen.
         </p>
 
         <p>
-          The other half is quietly admitting that charging guests \$120 per plate at a reception is the most audacious, tacky thing they have ever witnessed in their lives.
-        </p>
-
-        <p>
-          I refuse to apologize. But the sheer volume of angry family calls is starting to make me wonder if I really went too far by walking out.
+          I don&apos;t think I did anything wrong, but my mom won&apos;t stop calling me in tears. So I wanted an outside opinion.
         </p>
 
         {/* Interactive Reader Poll */}
@@ -160,13 +166,13 @@ export default function WeddingInvoiceStory() {
       </div>
 
       <aside className="story-submit">
-        <h2>Got your own wild story or dilemma?</h2>
+        <h2>Have your own story to share?</h2>
         <p>
-          Have you dealt with unreasonable family demands, wedding catastrophes, or bad roommate drama? Share your anonymous story with our editorial team at{" "}
-          <a href="mailto:vantalumstudio@gmail.com?subject=AITA%20Story%20Submission">
+          Dealing with weird family drama, bad roommates, or unreasonable friends? Send your story to{" "}
+          <a href="mailto:vantalumstudio@gmail.com?subject=Story%20Submission">
             vantalumstudio@gmail.com
           </a>
-          .
+          . Names are changed for privacy.
         </p>
       </aside>
     </article>
