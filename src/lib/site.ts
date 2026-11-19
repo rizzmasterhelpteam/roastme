@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 export const SITE_URL = "https://www.roastme-ai.com";
 export const publicPaths = ["/", "/blog", "/about", "/help", "/guidelines"] as const;
 export const publicContent = {
-  blog: { title: "Roast Me AI Blog", description: "The future home of playful roast ideas, persona guides, and tips for getting more from Roast Me AI.", eyebrow: "THE ROAST JOURNAL", heading: "Good comedy starts with a little perspective.", sections: [] },
+  blog: { title: "Roast Me AI Blog", description: "Funny short stories, awkward dilemmas, and everyday drama with a sharp twist.", eyebrow: "THE ROAST JOURNAL", heading: "Good comedy starts with a little perspective.", sections: [] },
   about: { title: "About Roast Me AI", description: "Meet Roast Me AI: six comedy personas, text and photo roasts, and playful roast battles.", eyebrow: "SAME JOKES. HIGHER STANDARDS.", heading: "A little self-awareness. A lot of personality.", sections: [
     ["Six personalities. Your kind of funny.", "Choose Savage, Grandma, CEO, Judgy Cat, Robot, or Drama Queen. Each has a distinct comedy style, from sweet shade to blunt punchlines."],
     ["Make it your roast", "Send a message, upload a photo you have permission to use, or enter a roast battle. Adjust chaos for sharper, more unpredictable humor and choose a short, medium, or long reply."],
