@@ -1,6 +1,19 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import { resolveApiOrigin } from "./api-url";
 export const isNative = () => Capacitor.isNativePlatform();
+export const isAndroid = () => Capacitor.getPlatform() === "android";
+const NativeGoogleAuth = registerPlugin<{
+  signIn(options: { nonce: string }): Promise<{ token?: string }>;
+}>("NativeGoogleAuth");
+
+export async function getAndroidGoogleCredential() {
+  const bytesToHex = (bytes: Uint8Array) =>
+    Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const nonce = bytesToHex(crypto.getRandomValues(new Uint8Array(32)));
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(nonce));
+  const { token } = await NativeGoogleAuth.signIn({ nonce: bytesToHex(new Uint8Array(digest)) });
+  return token ? { provider: "google" as const, token, nonce } : null;
+}
 export const apiOrigin = () => resolveApiOrigin();
 export const authRedirect = () =>
   isNative()

@@ -11,7 +11,7 @@ import { defaultState, levelFromChaos, type AppState } from "@/lib/personas";
 import { appInstanceId } from "@/lib/app-instance";
 import { localConversationMemory } from "@/lib/conversation-memory";
 import { browserSupabase } from "@/lib/supabase";
-import { isNative, authRedirect } from "@/lib/native/platform";
+import { isNative, isAndroid, authRedirect, getAndroidGoogleCredential } from "@/lib/native/platform";
 import { clickFeedback, playSound, unlockAudio } from "@/lib/feedback";
 type ApiBody = Record<string, unknown>;
 type ApiResult = { state?: AppState; [key: string]: unknown };
@@ -333,6 +333,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     if (method === "google" || method === "google-link") {
+      if (isAndroid()) {
+        const credential = await getAndroidGoogleCredential();
+        if (!credential) return;
+        const result = method === "google-link" && user?.is_anonymous
+          ? await sb.auth.linkIdentity(credential)
+          : await sb.auth.signInWithIdToken(credential);
+        if (result.error) throw result.error;
+        await api("premium/connect", {});
+        await reload();
+        return;
+      }
       const result =
         method === "google-link" && user?.is_anonymous
           ? await sb.auth.linkIdentity({
