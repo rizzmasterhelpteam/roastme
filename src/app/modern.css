@@ -566,12 +566,43 @@ select {
 .settings-page .settings-panel {
   background: var(--surface);
   border-color: var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.settings-page .settings-panel .settings-row {
+  box-sizing: border-box;
+  min-height: 61px;
+  padding: 8px 14px;
+  gap: 10px;
+}
+.settings-page .settings-language {
+  max-width: 46%;
+  min-width: 0;
+}
+.settings-page .account-roast-controls > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  list-style: none;
+  box-sizing: border-box;
+  min-height: 61px;
+}
+.settings-page .account-roast-controls > summary::-webkit-details-marker {
+  display: none;
+}
+.settings-page .account-roast-controls[open] > summary > svg {
+  transform: rotate(90deg);
 }
 .settings-page .settings-panel .settings-row + .settings-row {
   border-color: var(--line);
 }
 .settings-page .settings-row > svg:first-child {
-  background: var(--surface2);
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  padding: 0;
+  background: transparent;
   color: var(--muted);
 }
 .settings-page .settings-row b {
@@ -1360,40 +1391,38 @@ html:not([data-theme="light"]) .credit-option-icon {
   color: #ffcf70;
 }
 
-.account-settings-page .profile-card {
-  padding: 12px;
-  margin-bottom: 12px;
-  gap: 12px;
+.account-settings-page .page-heading {
+  margin-bottom: 18px;
 }
-.account-settings-page .profile-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+.settings-identity .profile-avatar {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 50%;
 }
-.account-settings-page .profile-card h2 {
-  font-size: 17px;
-}
-.account-settings-page .profile-stats {
-  margin: 12px 0;
-}
-.account-settings-page .settings-list {
-  margin-bottom: 20px;
-}
-.account-settings-page .link-account-banner {
-  padding: 12px;
-  margin: 10px 0;
+.settings-identity > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .account-preferences {
   min-width: 0;
+}
+.native-app .account-settings-page .account-preferences.settings-page {
+  margin: 0;
+  padding: 0;
 }
 
 .account-roast-controls > summary {
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 16px;
+  background: var(--surface);
   color: var(--text);
   font-size: 13px;
   cursor: pointer;
+}
+.settings-account-actions a.settings-row b {
+  color: var(--danger, #e85d79);
 }
 .account-roast-controls[open] > summary {
   margin-bottom: 10px;

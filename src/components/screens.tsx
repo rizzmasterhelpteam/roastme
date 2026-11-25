@@ -892,7 +892,7 @@ function InstaChatScreen({
       <div ref={viewportRef} className="insta-chat-viewport">
         <DemoNotice />
 
-        {/* Empty State / Instagram DM Profile Card */}
+        {/* Empty chat */}
         {messages.length === 0 && !busy && (
           <div className="insta-profile-intro">
             <div className="insta-intro-avatar-ring">
@@ -904,22 +904,10 @@ function InstaChatScreen({
                 <Sparkles size={16} />
               </span>
             </h2>
-            <div className="insta-intro-handle">
-              @{p.id}.roast · Official AI Personality
-            </div>
-            <p className="insta-intro-tagline">“{p.tagline}”</p>
-            <p className="insta-intro-bio">{p.description}</p>
-
-            <div className="insta-intro-badges">
-              {p.tags.map((t) => (
-                <span key={t} className="insta-intro-badge">
-                  {t}
-                </span>
-              ))}
-            </div>
+            <p className="insta-intro-tagline">{p.tagline}</p>
 
             <div className="insta-starter-section">
-              <span className="insta-starter-title">Break the ice:</span>
+              <p className="insta-starter-title">Try a starter or write your own</p>
               <div className="insta-starter-chips">
                 {starters.map((txt) => (
                   <button
@@ -1964,6 +1952,7 @@ function ComposerScreen({
 type BattleDifficulty = "Easy" | "Medium" | "Hard";
 
 interface BattleRoundTurn {
+  roastId: string;
   round: number;
   humanLine: string;
   opponentLine: string;
@@ -1977,7 +1966,6 @@ interface BattleRoundTurn {
     opponentTiming: number;
     opponentTotal: number;
   };
-  judgeComment: string;
 }
 
 const battleStarters: Record<string, string[]> = {
@@ -2412,6 +2400,8 @@ function Battle({ live: _live = false }: { live?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [creditsModal, setCreditsModal] = useState(false);
   const [generatedCard, setGeneratedCard] = useState<string>("");
+  const roundReady = rounds.length === currentRound;
+  const battleTopic = topic.trim() || rounds[0]?.humanLine || "";
   const battleEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -2422,7 +2412,7 @@ function Battle({ live: _live = false }: { live?: boolean }) {
     if (phase === "fighting") {
       battleEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [rounds, phase, busy]);
+  }, [rounds, phase, busy, currentRound]);
 
   const opponent = findPersona(opponentId);
   const savedCount = state.history.filter((r) => r.saved).length;
@@ -2446,21 +2436,31 @@ function Battle({ live: _live = false }: { live?: boolean }) {
 
   const handleRoundSubmit = async (customPrompt?: string) => {
     const promptText = (customPrompt || humanInput).trim();
-    if (!promptText || busy) return;
+    if (promptText.length < 2 || busy || roundReady) return;
 
     setBusy(true);
 
     try {
       // Each successful response is charged by the existing server or demo API.
-      let opponentReply: string;
+      let opponentRoast: Roast;
       try {
-        const topicContext = topic.trim()
-          ? `\nBattle topic: ${topic.trim()}`
-          : "";
+        const context = rounds.map((turn) => (
+          `R${turn.round}: You: ${turn.humanLine.slice(0, 100)} | ${opponent.name}: ${turn.opponentLine.slice(0, 120)}`
+        )).join("\n");
+        const direction = [
+          "Counter the opener; use its subject if no topic is set.",
+          "Counter the latest line and build on the previous exchange.",
+          "Finish with a strong counter and a callback to an earlier joke when it fits.",
+        ][currentRound - 1];
         const battleChaos =
           difficulty === "Hard" ? 88 : difficulty === "Medium" ? 62 : 28;
         const res = await api("roast", {
-          prompt: `[ROAST BATTLE ROUND ${currentRound} against ${opponent.name} (Difficulty: ${difficulty})]${topicContext}\nPlayer's roast: ${promptText}`,
+          prompt: [
+            `Round ${currentRound}/3. ${direction} Write one complete comeback in character.`,
+            battleTopic && `Topic: ${battleTopic.slice(0, 100)}`,
+            context,
+            `Player's latest line: ${promptText}`,
+          ].filter(Boolean).join("\n"),
           persona: opponent.id,
           level:
             difficulty === "Hard"
@@ -2474,7 +2474,7 @@ function Battle({ live: _live = false }: { live?: boolean }) {
         });
         if (!res || !("roast" in res) || !(res.roast as Roast)?.content)
           throw new Error("The response was unavailable. Please try again.");
-        opponentReply = (res.roast as Roast).content;
+        opponentRoast = res.roast as Roast;
       } catch (error) {
         if (error instanceof ClientError && error.outOfCredits)
           setCreditsModal(true);
@@ -2485,9 +2485,6 @@ function Battle({ live: _live = false }: { live?: boolean }) {
         );
         return;
       }
-
-      // Add a slight realistic dramatic pause if fast
-      await new Promise((r) => setTimeout(r, 600));
 
       // 2. Score Round based on difficulty & punchiness
       const lengthFactor = Math.min(Math.max(promptText.length / 25, 0.7), 1.2);
@@ -2549,17 +2546,11 @@ function Battle({ live: _live = false }: { live?: boolean }) {
       const hTotal = hHumor + hCreativity + hTiming;
       const oTotal = oHumor + oCreativity + oTiming;
 
-      const judgeComment =
-        hTotal > oTotal
-          ? `Round ${currentRound} goes to Player! That line landed with lethal comedy timing.`
-          : hTotal < oTotal
-            ? `${opponent.name} takes Round ${currentRound}! The counter-punch stung.`
-            : `Round ${currentRound} is a dead tie! Both fighters scored clean hits.`;
-
       const turn: BattleRoundTurn = {
         round: currentRound,
         humanLine: promptText,
-        opponentLine: opponentReply,
+        opponentLine: opponentRoast.content,
+        roastId: opponentRoast.id,
         scores: {
           humor: hHumor,
           creativity: hCreativity,
@@ -2570,64 +2561,66 @@ function Battle({ live: _live = false }: { live?: boolean }) {
           opponentTiming: oTiming,
           opponentTotal: oTotal,
         },
-        judgeComment,
       };
 
       const updatedRounds = [...rounds, turn];
       setRounds(updatedRounds);
       setHumanInput("");
 
-      if (currentRound < 3) {
-        setCurrentRound((r) => (r + 1) as 1 | 2 | 3);
-      } else {
-        // Battle Over! Calculate Winner & Generate PNG
-        const userGrandTotal = updatedRounds.reduce(
-          (sum, r) => sum + r.scores.humanTotal,
-          0,
-        );
-        const oppGrandTotal = updatedRounds.reduce(
-          (sum, r) => sum + r.scores.opponentTotal,
-          0,
-        );
-        const playerWon = userGrandTotal >= oppGrandTotal;
-
-        const newStats = {
-          wins: stats.wins + (playerWon ? 1 : 0),
-          losses: stats.losses + (playerWon ? 0 : 1),
-        };
-        setStats(newStats);
-        saveBattleStats(newStats);
-
-        const bestTurn = [...updatedRounds].sort(
-          (a, b) => b.scores.humanTotal - a.scores.humanTotal,
-        )[0];
-
-        const cardPng = generateBattleCardCanvas({
-          playerWon,
-          opponent,
-          difficulty,
-          rounds: updatedRounds,
-          bestPunchline:
-            bestTurn?.humanLine ||
-            "Delivered masterclass comebacks in the ring.",
-          userTotal: userGrandTotal,
-          opponentTotal: oppGrandTotal,
-        });
-
-        setGeneratedCard(cardPng);
-        setPhase("result");
-        if (typeof window !== "undefined") {
-          window.scrollTo({ top: 0, behavior: "smooth" });
-          document
-            .querySelector(".screen-root")
-            ?.scrollTo({ top: 0, behavior: "smooth" });
-          document
-            .querySelector(".battle-page-container")
-            ?.scrollTo({ top: 0, behavior: "smooth" });
-        }
-      }
     } finally {
       setBusy(false);
+    }
+  };
+
+  const advanceBattle = () => {
+    if (busy || !roundReady) return;
+    if (currentRound < 3) {
+      setCurrentRound((currentRound + 1) as 2 | 3);
+      return;
+    }
+    const userGrandTotal = rounds.reduce(
+      (sum, r) => sum + r.scores.humanTotal,
+      0,
+    );
+    const oppGrandTotal = rounds.reduce(
+      (sum, r) => sum + r.scores.opponentTotal,
+      0,
+    );
+    const playerWon = userGrandTotal >= oppGrandTotal;
+
+    const newStats = {
+      wins: stats.wins + (playerWon ? 1 : 0),
+      losses: stats.losses + (playerWon ? 0 : 1),
+    };
+    setStats(newStats);
+    saveBattleStats(newStats);
+
+    const bestTurn = [...rounds].sort(
+      (a, b) => b.scores.humanTotal - a.scores.humanTotal,
+    )[0];
+
+    const cardPng = generateBattleCardCanvas({
+      playerWon,
+      opponent,
+      difficulty,
+      rounds: rounds,
+      bestPunchline:
+        bestTurn?.humanLine ||
+        "Delivered masterclass comebacks in the ring.",
+      userTotal: userGrandTotal,
+      opponentTotal: oppGrandTotal,
+    });
+
+    setGeneratedCard(cardPng);
+    setPhase("result");
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      document
+        .querySelector(".screen-root")
+        ?.scrollTo({ top: 0, behavior: "smooth" });
+      document
+        .querySelector(".battle-page-container")
+        ?.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -2800,10 +2793,10 @@ function Battle({ live: _live = false }: { live?: boolean }) {
       {/* FIGHTING VIEW (3 Rounds) */}
       {phase === "fighting" && (
         <div className="battle-arena-wrap">
-          {topic.trim() && (
+          {battleTopic && (
             <div className="battle-topic-active">
               <span>TOPIC</span>
-              <b>{topic.trim()}</b>
+              <b>{battleTopic}</b>
             </div>
           )}
           {/* Arena Top Status Bar */}
@@ -2838,11 +2831,6 @@ function Battle({ live: _live = false }: { live?: boolean }) {
               <div key={r.round} className="battle-round-card">
                 <div className="battle-round-title-bar">
                   <span>ROUND {r.round} COMPLETED</span>
-                  <span className="battle-round-winner-pill">
-                    {r.scores.humanTotal >= r.scores.opponentTotal
-                      ? "Round Won by You 🏆"
-                      : `Round Won by ${opponent.name} 🥊`}
-                  </span>
                 </div>
 
                 {/* Human line */}
@@ -2866,47 +2854,24 @@ function Battle({ live: _live = false }: { live?: boolean }) {
                   </div>
                 </div>
 
-                {/* Judge Score Box */}
-                <div className="battle-judge-box">
-                  <div className="battle-judge-header">
-                    <WandSparkles size={16} />
-                    <b>AI Comedy Judge Evaluation</b>
-                  </div>
-                  <p className="battle-judge-comment">{r.judgeComment}</p>
-                  <div className="battle-judge-scores-grid">
-                    <div className="battle-score-col">
-                      <small>Your Score</small>
-                      <b>{r.scores.humanTotal} pts</b>
-                      <span>
-                        Humor: {r.scores.humor} · Creative:{" "}
-                        {r.scores.creativity} · Savage: {r.scores.timing}
-                      </span>
-                    </div>
-                    <div className="battle-score-vs">VS</div>
-                    <div className="battle-score-col">
-                      <small>{opponent.name}</small>
-                      <b>{r.scores.opponentTotal} pts</b>
-                      <span>
-                        Humor: {r.scores.opponentHumor} · Creative:{" "}
-                        {r.scores.opponentCreativity} · Savage:{" "}
-                        {r.scores.opponentTiming}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+
               </div>
             ))}
 
             {/* In-Progress Round Input */}
-            {currentRound <= 3 && (
+            {roundReady ? (
+              <Button type="button" className="wide" onClick={advanceBattle}>
+                {currentRound === 3 ? "See verdict" : "Next round"} <ArrowRight size={17} />
+              </Button>
+            ) : (
               <div className="battle-current-turn-card">
                 <div className="battle-current-turn-header">
                   <Flame size={18} className="flame-orange" />
-                  <b>Your Turn · Round {currentRound} (Human goes first)</b>
+                  <b>{["Open the battle", "Counter the comeback", "Land your final punch"][currentRound - 1]}</b>
                 </div>
 
                 {/* Starters Pills */}
-                <div className="battle-starters-scroll">
+                {currentRound === 1 && <div className="battle-starters-scroll">
                   {(battleStarters[opponent.id] || battleStarters.savage).map(
                     (st, i) => (
                       <button
@@ -2920,7 +2885,7 @@ function Battle({ live: _live = false }: { live?: boolean }) {
                       </button>
                     ),
                   )}
-                </div>
+                </div>}
 
                 {/* Custom Input */}
                 <form
@@ -2932,13 +2897,12 @@ function Battle({ live: _live = false }: { live?: boolean }) {
                 >
                   <input
                     type="text"
-                    maxLength={1200}
+                    maxLength={650}
                     value={humanInput}
                     onChange={(e) => setHumanInput(e.target.value)}
                     placeholder={`Deliver your Round ${currentRound} roast line…`}
                     className="battle-turn-input"
                     disabled={busy}
-                    autoFocus
                   />
                   <Button
                     type="submit"
@@ -2950,7 +2914,7 @@ function Battle({ live: _live = false }: { live?: boolean }) {
                     ) : (
                       <Send size={18} />
                     )}
-                    <span>{busy ? "Scoring…" : "Fire"}</span>
+                    <span>{busy ? "Sending…" : "Fire"}</span>
                   </Button>
                 </form>
 
@@ -2958,8 +2922,7 @@ function Battle({ live: _live = false }: { live?: boolean }) {
                   <div className="battle-busy-indicator">
                     <Portrait id={opponent.id} className="battle-busy-avatar" />
                     <span>
-                      {opponent.name} is formulating comeback & judge is
-                      scoring…
+                      {opponent.name} is writing a comeback…
                     </span>
                   </div>
                 )}
@@ -2985,6 +2948,10 @@ function Battle({ live: _live = false }: { live?: boolean }) {
             );
             const playerWon = userGrandTotal >= oppGrandTotal;
 
+            const best = rounds.reduce((top, turn) =>
+              turn.scores.humanTotal > top.scores.humanTotal ? turn : top,
+            );
+
             return (
               <>
                 <div className="battle-result-hero">
@@ -3003,6 +2970,28 @@ function Battle({ live: _live = false }: { live?: boolean }) {
                       ? `You defeated ${opponent.name} in a 3-round battle on ${difficulty} mode with ${userGrandTotal} pts!`
                       : `${opponent.name} edged ahead with ${oppGrandTotal} pts vs your ${userGrandTotal} pts. Settle the score!`}
                   </p>
+                </div>
+
+                <div className="battle-judge-box">
+                  <b>Round breakdown</b>
+                  <p>{userGrandTotal === oppGrandTotal
+                    ? "The final scores tied. The player wins ties."
+                    : `${playerWon ? "You" : opponent.name} finished ${Math.abs(userGrandTotal - oppGrandTotal)} points ahead.`}</p>
+                  <small>Simulated arcade scores vary by difficulty.</small>
+                  {rounds.map(({ round, scores }) => (
+                    <p key={round}>
+                      Round {round} · {scores.humanTotal === scores.opponentTotal ? "Tie" : scores.humanTotal > scores.opponentTotal ? "You" : opponent.name} · {scores.humanTotal}–{scores.opponentTotal}
+                    </p>
+                  ))}
+                  <b>Your highest-scoring exchange</b>
+                  <p>{best.humanLine}</p>
+                  <p><b>{opponent.name}:</b> {best.opponentLine}</p>
+                  <Button type="button" variant="outline"
+                    disabled={!best.roastId || state.history.some((item) => item.id === best.roastId && item.saved)}
+                    onClick={() => void api("history/save", { id: best.roastId, saved: true })
+                      .then(() => toast("Comeback saved."))
+                      .catch(() => toast("Could not save this comeback."))}
+                  >Save comeback</Button>
                 </div>
 
                 {/* PNG Card Preview */}
@@ -3665,7 +3654,9 @@ function SignIn({ link = false }: { link?: boolean }) {
         <Button
           className="google-button"
           disabled={busy || !acceptedTerms}
-          onClick={() => void run(() => auth(link ? "google-link" : "google"))}
+          onClick={() => void run(async () => {
+            if (await auth(link ? "google-link" : "google")) router.replace("/");
+          })}
         >
           <span className="signin-button-icon"><img src="/google-mark.svg" alt="" width="24" height="24" /></span>
           <span>{link ? "Link with Google" : "Continue with Google"}</span>
@@ -3782,78 +3773,43 @@ function Profile() {
   return (
     <div className="screen-narrow settings-page account-settings-page">
       <Back label="Back to roast room" />
-      <Heading title="Account & settings" icon={<UserRound />} />
-      <div className="profile-card">
-        <Portrait className="profile-avatar" />
-        <div>
-          <h2>{state.email?.split("@")[0] || "Roast Rookie"}</h2>
-          <p>{state.guest ? "Guest account" : state.email}</p>
-          <span className="profile-badge">
-            {state.premium ? "👑 Premium member" : "Free plan"}
-          </span>
+      <Heading title="Settings" />
+      <div className="settings-group">
+        <h3>Account</h3>
+        <div className="settings-panel">
+          <div className="settings-row settings-identity">
+            <Portrait className="profile-avatar" />
+            <span>
+              <b>{state.email?.split("@")[0] || "Roast Rookie"}</b>
+              <small>{state.guest ? "Guest account" : state.email}</small>
+            </span>
+          </div>
+          {state.guest && <Row href="/link-account" icon={<Link2 />} title="Link your account" />}
+          <Row
+            icon={<Coins />}
+            title={`Credits · ${state.premium ? "Unlimited" : state.credits}`}
+            onClick={() => window.dispatchEvent(new CustomEvent("roast:open-credits"))}
+          />
+          <Row
+            href="/subscription"
+            icon={<Crown />}
+            title={`Subscription · ${state.premium ? "Premium" : "Free"}`}
+          />
+          <Row
+            icon={<Heart />}
+            title="Saved roasts"
+            onClick={() => window.dispatchEvent(new CustomEvent("roast:open-saved"))}
+          />
         </div>
       </div>
-      {state.guest && (
-        <Link href="/link-account" className="link-account-banner">
-          <Link2 size={22} />
-          <span>
-            <b>Keep your roasts.</b>
-            <small>Link your account. Keep your credits and history.</small>
-          </span>
-          <ArrowRight size={18} />
-        </Link>
-      )}
-      <div className="profile-stats">
-        <button
-          type="button"
-          className="profile-stat-btn"
-          onClick={() =>
-            window.dispatchEvent(new CustomEvent("roast:open-credits"))
-          }
-        >
-          <Coins />
-          <b>{state.credits}</b>
-          <span>Credits · Get more</span>
-          <ChevronRight size={17} />
-        </button>
-        <Link href="/premium">
-          <Crown />
-          <b>{state.premium ? "Premium" : "Free plan"}</b>
-          <span>
-            {state.premium ? "The whole fire" : "Room to turn up the heat"}
-          </span>
-          <ChevronRight size={17} />
-        </Link>
-      </div>
-      <div className="settings-list">
-        <Row
-          onClick={() => {
-            window.dispatchEvent(new CustomEvent("roast:open-saved"));
-          }}
-          icon={<Heart fill="#f43f5e" color="#f43f5e" />}
-          title="Saved roasts"
-          desc="The burns that deserve an encore"
-        />
-        <Row
-          href="/subscription"
-          icon={<Crown />}
-          title="Account & subscription"
-          desc="Plans, purchases, and billing help"
-        />
-      </div>
       <Settings embedded />
-      <Button
-        variant="outline"
-        className="wide"
-        disabled={busy}
-        onClick={() => void run(signout)}
-      >
-        <LogOut size={17} />
-        Sign out
-      </Button>
-      <Link href="/delete-account" className="delete-account-link">
-        Delete my account
-      </Link>
+      <div className="settings-group settings-account-actions">
+        <h3>Account actions</h3>
+        <div className="settings-panel">
+          <Row icon={<LogOut />} title="Sign out" disabled={busy} onClick={() => void run(signout)} />
+          <Row href="/delete-account" icon={<Trash2 />} title="Delete account" />
+        </div>
+      </div>
       <DemoNotice />
     </div>
   );
@@ -3864,12 +3820,14 @@ function Row({
   title,
   desc,
   onClick,
+  disabled,
 }: {
   href?: string;
   icon: ReactNode;
   title: string;
   desc?: string;
   onClick?: () => void;
+  disabled?: boolean;
 }) {
   const contents = (
     <>
@@ -3886,7 +3844,7 @@ function Row({
       {contents}
     </Link>
   ) : (
-    <button onClick={onClick} className="settings-row">
+    <button type="button" onClick={onClick} disabled={disabled} className="settings-row">
       {contents}
     </button>
   );
@@ -3919,7 +3877,7 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
   return (
     <div
       className={
-        embedded ? "account-preferences" : "screen-narrow settings-page"
+        embedded ? "account-preferences settings-page" : "screen-narrow settings-page"
       }
     >
       {!embedded && (
@@ -3927,34 +3885,29 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
           <Back label="Back to roast room" />
           <Heading
             title="Settings"
-            description="Your roast, your rules. Make it feel like you."
             icon={<SettingsIcon />}
           />
         </>
       )}
       <details className="settings-group account-roast-controls">
-        <summary>Roast controls</summary>
+        <summary>Roast controls <ChevronRight size={16} aria-hidden="true" /></summary>
         <Controls compact />
       </details>
       <div className="settings-group">
-        <h3>App preferences</h3>
+        <h3>Preferences</h3>
         <div className="settings-panel">
           {[
             {
               key: "notifications",
               icon: Bell,
               title: "Notifications",
-              desc: isNative()
-                ? "One daily reminder at your usual time"
-                : "Daily reminder while this site is open",
-              status: "Unsupported browser",
+              status: "Unavailable",
               disabled: !capabilities.notifications,
             },
             {
               key: "dark",
               icon: Moon,
               title: "Dark mode",
-              desc: "Switch between dark and light",
               status: "",
               disabled: false,
             },
@@ -3962,7 +3915,6 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
               key: "sound",
               icon: Volume2,
               title: "Sound effects",
-              desc: "Subtle clicks and a soft reply tone",
               status: "",
               disabled: false,
             },
@@ -3970,16 +3922,14 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
               key: "haptics",
               icon: Smartphone,
               title: "Haptic feedback",
-              desc: "Gentle feedback on taps and replies",
-              status: "Unsupported browser",
+              status: "Unavailable",
               disabled: !capabilities.haptics,
             },
-          ].map(({ key, icon: Icon, title, desc, disabled, status }) => (
+          ].map(({ key, icon: Icon, title, disabled, status }) => (
             <div className="settings-row" key={key}>
               <Icon />
               <span>
                 <b>{title}</b>
-                <small>{desc}</small>
               </span>
               {disabled ? (
                 <span className="settings-status">{status}</span>
@@ -4037,7 +3987,7 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
             <Globe />
             <span>
               <b>Reply language</b>
-              <small>Language of new roasts · Menus stay in English</small>
+              <small>New roasts only</small>
             </span>
             <select
               aria-label="Reply language"
@@ -4064,19 +4014,6 @@ function Settings({ embedded = false }: { embedded?: boolean }) {
       <div className="settings-group">
         <h3>Help & privacy</h3>
         <div className="settings-panel">
-          {isNative() && !!process.env.NEXT_PUBLIC_ADMOB_REWARDED_ID && (
-            <Row
-              icon={<ShieldCheck />}
-              title="Ad privacy choices"
-              desc="Review your advertising consent"
-              onClick={() =>
-                void run(async () => {
-                  const { openAdPrivacyChoices } = await import("@/lib/native/consent");
-                  await openAdPrivacyChoices();
-                })
-              }
-            />
-          )}
           <Row href="/about" icon={<Mail />} title="Help, safety & feedback" />
           <Row href="/privacy" icon={<LockKeyhole />} title="Privacy policy" />
         </div>
@@ -4314,6 +4251,7 @@ const legalContent: Record<
   },
 };
 function InfoPage({ kind }: { kind: string }) {
+  const { busy, run } = useAction();
   if (kind === "about")
     return (
       <div className="screen-narrow about-page">
@@ -4352,6 +4290,14 @@ function InfoPage({ kind }: { kind: string }) {
     <div className="screen-narrow legal-page">
       <Back />
       <Heading eyebrow="THE IMPORTANT STUFF" title={info.title} />
+      {kind === "privacy" && isNative() && !!process.env.NEXT_PUBLIC_ADMOB_REWARDED_ID && (
+        <section>
+          <Button type="button" variant="outline" disabled={busy} onClick={() => void run(async () => {
+            const { openAdPrivacyChoices } = await import("@/lib/native/consent");
+            await openAdPrivacyChoices();
+          })}>Ad privacy choices</Button>
+        </section>
+      )}
       {info.paragraphs.map((p) => (
         <section key={p.title}>
           <h2>{p.title}</h2>

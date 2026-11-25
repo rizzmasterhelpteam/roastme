@@ -3,6 +3,7 @@ const config: CapacitorConfig = {
   appId: "com.roastmeai.vantalum",
   appName: "Roast Me AI",
   webDir: "dist-native",
+  loggingBehavior: "none",
   server: { androidScheme: "https", hostname: "localhost" },
   android: {
     backgroundColor: "#000000",

@@ -36,7 +36,7 @@ type Context = {
   replyLength: "short" | "medium" | "long";
   setReplyLength: (value: "short" | "medium" | "long") => void;
   setChaos: (n: number) => void;
-  auth: (method: string, email?: string, password?: string) => Promise<void>;
+  auth: (method: string, email?: string, password?: string) => Promise<boolean | void>;
   signout: () => Promise<void>;
   awardCredits: (n: number) => void;
 };
@@ -342,7 +342,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (result.error) throw result.error;
         await api("premium/connect", {});
         await reload();
-        return;
+        return true;
       }
       const result =
         method === "google-link" && user?.is_anonymous
