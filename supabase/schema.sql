@@ -2,7 +2,7 @@
 create table public.profiles (
  id uuid primary key references auth.users on delete cascade,
  display_name text not null default 'Roast Rookie',
- credits_balance integer not null default 5 check (credits_balance >= 0),
+ credits_balance integer not null default 3 check (credits_balance >= 0),
  premium_status boolean not null default false,
  premium_expires_at timestamptz,
  premium_plan text,
@@ -34,7 +34,7 @@ create table public.reports (id uuid primary key default gen_random_uuid(), user
 create table public.credit_transactions (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles on delete cascade, type text not null, amount integer not null, reference text, created_at timestamptz default now(), unique(user_id,reference));
 create index transactions_owner on public.credit_transactions(user_id,created_at desc);
 create table public.subscriptions (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles on delete cascade, provider text not null, provider_reference text unique, plan_type text not null, status text not null, expires_at timestamptz, created_at timestamptz default now());
-create table public.ad_rewards (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles on delete cascade, provider_event_id text unique, ad_network text not null, amount integer not null default 5, verification_status text not null default 'pending', created_at timestamptz default now());
+create table public.ad_rewards (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles on delete cascade, provider_event_id text unique, ad_network text not null, amount integer not null default 3, verification_status text not null default 'pending', created_at timestamptz default now());
 create table public.user_settings (user_id uuid primary key references public.profiles on delete cascade, preferences jsonb not null default '{"notifications":false,"sound":false,"haptics":true,"dark":true,"language":"English"}'::jsonb);
 create table public.generation_requests (id uuid primary key default gen_random_uuid(), user_id uuid not null references public.profiles on delete cascade, created_at timestamptz not null default now());
 create index requests_owner_time on public.generation_requests(user_id,created_at desc);
@@ -72,7 +72,7 @@ create function private.initialize_user() returns trigger language plpgsql secur
 begin
  insert into public.profiles(id) values(new.id);
  insert into public.user_settings(user_id) values(new.id);
- insert into public.credit_transactions(user_id,type,amount,reference) values(new.id,'initial',5,'initial');
+ insert into public.credit_transactions(user_id,type,amount,reference) values(new.id,'initial',3,'initial');
  return new;
 end; $$;
 revoke all on function private.initialize_user() from public,anon,authenticated;
@@ -114,9 +114,9 @@ begin
  select * into p from public.profiles where id=p_user for update;
  if not found then raise exception 'Account not found'; end if;
  if p.last_daily_claim=(now() at time zone 'UTC')::date then raise exception 'Your daily credits are already claimed. Come back tomorrow!'; end if;
- update public.profiles set credits_balance=credits_balance+5,last_daily_claim=(now() at time zone 'UTC')::date,streak=case when p.last_daily_claim=(now() at time zone 'UTC')::date-1 then p.streak+1 else 1 end where id=p_user;
- insert into public.credit_transactions(user_id,type,amount,reference) values(p_user,'daily_reward',5,'daily:'||((now() at time zone 'UTC')::date)::text);
- return p.credits_balance+5;
+ update public.profiles set credits_balance=credits_balance+3,last_daily_claim=(now() at time zone 'UTC')::date,streak=case when p.last_daily_claim=(now() at time zone 'UTC')::date-1 then p.streak+1 else 1 end where id=p_user;
+ insert into public.credit_transactions(user_id,type,amount,reference) values(p_user,'daily_reward',3,'daily:'||((now() at time zone 'UTC')::date)::text);
+ return p.credits_balance+3;
 end; $$;
 revoke all on function public.begin_generation(uuid,uuid,integer),public.cancel_generation(uuid,uuid),public.finish_generation(uuid,uuid,uuid,uuid,text,text,text,integer,text,text,text),public.claim_daily(uuid) from public,anon,authenticated;
 grant execute on function public.begin_generation(uuid,uuid,integer),public.cancel_generation(uuid,uuid),public.finish_generation(uuid,uuid,uuid,uuid,text,text,text,integer,text,text,text),public.claim_daily(uuid) to service_role;
@@ -135,13 +135,11 @@ begin
  if not found then raise exception 'Account not found'; end if;
  select count(*) into n from public.ad_rewards where user_id=p_user and created_at>now()-interval '1 minute';
  if n>=2 then raise exception 'Please wait before requesting another ad.'; end if;
- select count(*) into n from public.ad_rewards where user_id=p_user and verification_status='verified' and created_at>date_trunc('day',now() at time zone 'UTC') at time zone 'UTC';
- if n>=10 then raise exception 'Your daily ad rewards are complete. Come back tomorrow.'; end if;
- insert into public.ad_rewards(user_id,ad_network,amount,verification_status,intent_expires_at) values(p_user,'admob',5,'pending',now()+interval '10 minutes') returning id into intent;
+ insert into public.ad_rewards(user_id,ad_network,amount,verification_status,intent_expires_at) values(p_user,'admob',3,'pending',now()+interval '10 minutes') returning id into intent;
  return intent;
 end; $$;
 create function public.grant_verified_ad(p_user uuid,p_intent uuid,p_event text) returns void language plpgsql security invoker set search_path='' as $$
-declare reward public.ad_rewards; n integer;
+declare reward public.ad_rewards;
 begin
  perform 1 from public.profiles where id=p_user for update;
  if not found then raise exception 'Account not found'; end if;
@@ -149,11 +147,9 @@ begin
  if not found then raise exception 'Unknown intent'; end if;
  if reward.verification_status='verified' and reward.provider_event_id=p_event then return; end if;
  if reward.verification_status<>'pending' or reward.intent_expires_at<now() then raise exception 'Invalid or expired intent'; end if;
- select count(*) into n from public.ad_rewards where user_id=p_user and verification_status='verified' and created_at>date_trunc('day',now() at time zone 'UTC') at time zone 'UTC';
- if n>=10 then raise exception 'Daily ad reward limit'; end if;
- update public.ad_rewards set verification_status='verified',provider_event_id=p_event where id=p_intent;
- update public.profiles set credits_balance=credits_balance+5 where id=p_user;
- insert into public.credit_transactions(user_id,type,amount,reference) values(p_user,'ad_reward',5,'ad:'||p_event);
+ update public.ad_rewards set verification_status='verified',provider_event_id=p_event,amount=3 where id=p_intent;
+ update public.profiles set credits_balance=credits_balance+3 where id=p_user;
+ insert into public.credit_transactions(user_id,type,amount,reference) values(p_user,'ad_reward',3,'ad:'||p_event);
 end; $$;
 create function public.apply_store_subscription(p_user uuid,p_active boolean,p_plan text,p_expiry timestamptz,p_checked timestamptz) returns void language plpgsql security invoker set search_path='' as $$
 declare previous timestamptz;
@@ -178,9 +174,9 @@ begin
  select * into p from public.profiles where id=p_user for update;
  if not found then raise exception 'Account not found'; end if;
  if p.last_daily_claim is distinct from today then
-   update public.profiles set credits_balance=5,last_daily_claim=today,streak=case when p.last_daily_claim=today-1 then p.streak+1 else 1 end where id=p_user;
-   insert into public.credit_transactions(user_id,type,amount,reference) values(p_user,'daily_reset',5-p.credits_balance,'reset:'||today::text);
-   return 5;
+   update public.profiles set credits_balance=3,last_daily_claim=today,streak=case when p.last_daily_claim=today-1 then p.streak+1 else 1 end where id=p_user;
+   insert into public.credit_transactions(user_id,type,amount,reference) values(p_user,'daily_reset',3-p.credits_balance,'reset:'||today::text);
+   return 3;
  end if;
  return p.credits_balance;
 end; $$;
@@ -220,7 +216,7 @@ begin
  return m;
 end; $$;
 create or replace function public.grant_verified_ad(p_user uuid,p_intent uuid,p_event text) returns void language plpgsql security invoker set search_path='' as $$
-declare reward public.ad_rewards; n integer;
+declare reward public.ad_rewards;
 begin
  perform public.reset_daily_credits(p_user);
  perform 1 from public.profiles where id=p_user for update;
@@ -229,11 +225,9 @@ begin
  if not found then raise exception 'Unknown intent'; end if;
  if reward.verification_status='verified' and reward.provider_event_id=p_event then return; end if;
  if reward.verification_status<>'pending' or reward.intent_expires_at<now() then raise exception 'Invalid or expired intent'; end if;
- select count(*) into n from public.ad_rewards where user_id=p_user and verification_status='verified' and created_at>date_trunc('day',now() at time zone 'UTC') at time zone 'UTC';
- if n>=10 then raise exception 'Daily ad reward limit'; end if;
- update public.ad_rewards set verification_status='verified',provider_event_id=p_event where id=p_intent;
- update public.profiles set credits_balance=credits_balance+5 where id=p_user;
- insert into public.credit_transactions(user_id,type,amount,reference) values(p_user,'ad_reward',5,'ad:'||p_event);
+ update public.ad_rewards set verification_status='verified',provider_event_id=p_event,amount=3 where id=p_intent;
+ update public.profiles set credits_balance=credits_balance+3 where id=p_user;
+ insert into public.credit_transactions(user_id,type,amount,reference) values(p_user,'ad_reward',3,'ad:'||p_event);
 end; $$;
 
 -- Supporting indexes for owner lookups and cascading account deletion.

@@ -139,7 +139,7 @@ export type AppState = {
   history: Roast[];
 };
 export const defaultState: AppState = {
-  credits: 5,
+  credits: 3,
   premium: false,
   email: null,
   guest: true,

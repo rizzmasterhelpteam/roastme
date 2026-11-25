@@ -309,7 +309,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const sb = browserSupabase();
     if (!sb) {
       if (method === "guest") {
-        toast("You’re in! Enjoy 5 demo credits.");
+        toast("You’re in! Enjoy 3 demo credits.");
         return;
       }
       throw new Error(

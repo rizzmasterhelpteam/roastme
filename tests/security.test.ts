@@ -70,28 +70,28 @@ test("Postgres credit transactions, generation leases, RLS, rewards and deletion
           )
         ).rows[0].credits_balance,
       );
-    assert.equal(await balance(), 5);
+    assert.equal(await balance(), 3);
     await db.query("select public.begin_generation($1,$2,1)", [user, token]);
-    assert.equal(await balance(), 5, "a lease must not charge credits");
+    assert.equal(await balance(), 3, "a lease must not charge credits");
     await assert.rejects(
       db.query("select public.begin_generation($1,$2,1)", [user, randomUUID()]),
       /already cooking/,
     );
     await db.query("select public.cancel_generation($1,$2)", [user, token]);
-    assert.equal(await balance(), 5, "failed generation must not charge");
+    assert.equal(await balance(), 3, "failed generation must not charge");
     await db.query("select public.begin_generation($1,$2,2)", [user, token]);
     await db.query(
       "select public.finish_generation($1,$2,$3,$4,'savage','image','Spicy',50,'my outfit','A playful roast',null)",
       [user, token, request, session],
     );
-    assert.equal(await balance(), 3);
+    assert.equal(await balance(), 1);
     assert.equal(
       (await db.query("select * from public.messages where user_id=$1", [user]))
         .rows.length,
       1,
     );
     await db.query("select public.reset_daily_credits($1)", [user]);
-    assert.equal(await balance(), 3, "same day must not refill credits");
+    assert.equal(await balance(), 1, "same day must not refill credits");
     await db.query(
       "update public.profiles set last_daily_claim=(now() at time zone 'UTC')::date-1 where id=$1",
       [user],
@@ -99,11 +99,11 @@ test("Postgres credit transactions, generation leases, RLS, rewards and deletion
     await db.query("select public.reset_daily_credits($1)", [user]);
     assert.equal(
       await balance(),
-      5,
-      "new UTC day resets balance rather than adds five",
+      3,
+      "new UTC day resets balance rather than adds three",
     );
     await db.query("select public.reset_daily_credits($1)", [user]);
-    assert.equal(await balance(), 5, "repeated reset is idempotent");
+    assert.equal(await balance(), 3, "repeated reset is idempotent");
     const intent = (
       await db.query<{ create_ad_intent: string }>(
         "select public.create_ad_intent($1)",
@@ -126,8 +126,8 @@ test("Postgres credit transactions, generation leases, RLS, rewards and deletion
     ]);
     assert.equal(
       await balance(),
-      10,
-      "a verified ad after midnight resets first, then adds five",
+      6,
+      "a verified ad after midnight resets first, then adds three",
     );
     await db.query("select public.grant_verified_ad($1,$2,$3)", [
       user,
@@ -136,7 +136,7 @@ test("Postgres credit transactions, generation leases, RLS, rewards and deletion
     ]);
     assert.equal(
       await balance(),
-      10,
+      6,
       "replayed ad callback must not mint credits",
     );
     await assert.rejects(
@@ -177,7 +177,7 @@ test("Postgres credit transactions, generation leases, RLS, rewards and deletion
       db.query("select public.claim_daily($1)", [user]),
       /automatically at 00:00 UTC/,
     );
-    assert.equal(await balance(), 10);
+    assert.equal(await balance(), 6);
     await db.query("select set_config($1,$2,false)", [
       "request.jwt.claim.sub",
       other,

@@ -231,7 +231,7 @@ export function OutOfCredits({ close }: { close: () => void }) {
             onClick={() =>
               void run(async () => {
                 await api("rewards/ad", {});
-                toast("5 credits added.");
+                toast("3 credits added.");
                 close();
               })
             }
@@ -245,7 +245,7 @@ export function OutOfCredits({ close }: { close: () => void }) {
             </span>
             <span>
               <b>{busy ? "Checking your reward…" : "Watch an ad"}</b>
-              <small>Earn 5 credits after watching</small>
+              <small>Earn 3 credits after watching</small>
             </span>
             <ChevronRight size={17} />
           </button>}
@@ -253,7 +253,7 @@ export function OutOfCredits({ close }: { close: () => void }) {
         <div className="credit-modal-reset">
           <Info size={15} />
           <span>
-            Free credits reset to 5 at 00:00 UTC every day. Unused credits do
+            Free credits reset to 3 at 00:00 UTC every day. Unused credits do
             not carry over.
           </span>
         </div>
@@ -1021,7 +1021,7 @@ function InstaChatScreen({
               <p>No credits left. Keep the roasts coming.</p>
               <div className="chat-credit-offer-actions">
                 <button type="button" onClick={() => setPremiumOpen(true)}><b>Go Premium</b><small>Unlimited roasts</small></button>
-                {isNative() && <button type="button" disabled={adBusy} onClick={() => void runAd(async () => { await api("rewards/ad", {}); toast("5 credits added."); })}><b>{adBusy ? "Loading…" : "Watch an ad"}</b><small>+5 credits</small></button>}
+                {isNative() && <button type="button" disabled={adBusy} onClick={() => void runAd(async () => { await api("rewards/ad", {}); toast("3 credits added."); })}><b>{adBusy ? "Loading…" : "Watch an ad"}</b><small>+3 credits</small></button>}
               </div>
               <small>Free credits reset at 00:00 UTC.</small>
             </div>
@@ -3198,7 +3198,7 @@ function Rewards() {
             <Sparkles size={23} />
           </div>
           <span className="eyebrow">ON THE HOUSE</span>
-          <h2>5 free credits</h2>
+          <h2>3 free credits</h2>
           <p>
             Fresh credits. Every day.
             <br />
@@ -3230,7 +3230,7 @@ function Rewards() {
             }
           >
             <Clapperboard size={17} />
-            Watch an ad · +5 credits
+            Watch an ad · +3 credits
           </Button>
           <small>
             {isNative() && process.env.NEXT_PUBLIC_ADMOB_REWARDED_ID
@@ -3276,7 +3276,7 @@ function Rewards() {
       {reward && (
         <Modal title="Fuel added. Ego warned." onClose={() => setReward(false)}>
           <Portrait className="reward-mascot" />
-          <h2 className="center reward-number">+5 credits!</h2>
+          <h2 className="center reward-number">+3 credits!</h2>
           <p className="center muted">
             Your balance is now {state.credits} credits.
             <br />
@@ -3388,7 +3388,7 @@ function Premium({ inModal = false }: { inModal?: boolean }) {
         ))}
       </div>
       <p className="premium-free-summary">
-        <b>Free plan:</b> 5 credits reset daily at 00:00 UTC, all personas,
+        <b>Free plan:</b> 3 credits reset daily at 00:00 UTC, all personas,
         saved roasts and share cards.
       </p>
       <div className="plan-options">
@@ -3599,7 +3599,7 @@ function Onboarding() {
   const items = [
     { title: "Meet your", accent: "match.", desc: "Six personalities. Six ways to question your life choices.", label: "PICK YOUR ROASTER", icon: Flame, detail: "Savage, Grandma, CEO, Judgy Cat, Robot or Drama Queen. Find your kind of funny." },
     { title: "Bring the", accent: "heat.", desc: "Roast a message, drop a photo or challenge an AI to a battle.", label: "MAKE IT YOURS", icon: Swords, detail: "Set the chaos. Choose your reply length. Save and share the best punchlines." },
-    { title: "Fresh fire.", accent: "Every day.", desc: "Start with 5 free daily credits. No card needed.", label: "YOUR DAILY DOSE", icon: Coins, detail: "Daily credits reset at 00:00 UTC. Unused daily credits don’t roll over." },
+    { title: "Fresh fire.", accent: "Every day.", desc: "Start with 3 free daily credits. No card needed.", label: "YOUR DAILY DOSE", icon: Coins, detail: "Daily credits reset at 00:00 UTC. Unused daily credits don’t roll over." },
   ];
   const current = items[slide];
   const StepIcon = current.icon;
@@ -4254,7 +4254,7 @@ const legalContent: Record<
       },
       {
         title: "Credits and subscriptions",
-        text: "Text and chat cost 1 credit per reply. A three-round roast battle costs 3 credits (1 per completed round). Image roasts cost 2 credits. Credits are charged only after a successful generation. Your balance resets to 5 credits at 00:00 UTC each day; unused credits do not carry over. Planned subscriptions are $4.99 weekly and $15.99 monthly; purchases are not currently enabled.",
+        text: "Text and chat cost 1 credit per reply. A three-round roast battle costs 3 credits (1 per completed round). Image roasts cost 2 credits. Credits are charged only after a successful generation. Your balance resets to 3 credits at 00:00 UTC each day; unused credits do not carry over. Planned subscriptions are $4.99 weekly and $15.99 monthly; purchases are not currently enabled.",
       },
       {
         title: "Acceptable use",
@@ -4292,7 +4292,7 @@ const legalContent: Record<
     paragraphs: [
       {
         title: "How do credits work?",
-        text: "You start with 5 credits. A text response uses 1, a three-round battle uses 3 (1 per completed round), and an image roast uses 2. Failed or blocked generations do not use credits. Free credits reset to 5 at 00:00 UTC each day.",
+        text: "You start with 3 credits. A text response uses 1, a three-round battle uses 3 (1 per completed round), and an image roast uses 2. Failed or blocked generations do not use credits. Free credits reset to 3 at 00:00 UTC each day.",
       },
       {
         title: "Can I save my guest account?",

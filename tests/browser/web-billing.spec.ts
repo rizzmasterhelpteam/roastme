@@ -90,7 +90,7 @@ test("zero-credit web chat and rewards offer Premium without ad actions", async 
   await page.screenshot({ path: "work/web-billing-mobile.png" });
   await page.goto("/rewards");
   await expect(
-    page.getByRole("heading", { name: "5 free credits" }),
+    page.getByRole("heading", { name: "3 free credits" }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: /Watch an ad/ })).toHaveCount(
     0,

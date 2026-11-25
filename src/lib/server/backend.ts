@@ -77,7 +77,7 @@ export async function backend(request: Request): Promise<Backend> {
         .slice(0, 10);
       record.state.streak =
         record.claimed === yesterday ? record.state.streak + 1 : 1;
-      record.state.credits = 5;
+      record.state.credits = 3;
       record.claimed = today;
     }
     record.state.dailyClaimed = true;

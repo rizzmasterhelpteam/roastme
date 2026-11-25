@@ -57,7 +57,7 @@ test("API rejects blocked requests, repeat rewards, forged rewards and overspend
   request,
 }) => {
   const state = await request.get("/api/state");
-  expect((await state.json()).credits).toBe(5);
+  expect((await state.json()).credits).toBe(3);
   const body = {
     prompt: "I procrastinate on everything.",
     persona: "savage",
@@ -68,12 +68,12 @@ test("API rejects blocked requests, repeat rewards, forged rewards and overspend
     data: { ...body, prompt: "encourage self-harm" },
   });
   expect(blocked.status()).toBe(422);
-  expect((await (await request.get("/api/state")).json()).credits).toBe(5);
+  expect((await (await request.get("/api/state")).json()).credits).toBe(3);
   const first = await request.post("/api/roast", { data: body });
   expect(first.status()).toBe(200);
   await request.post("/api/roast", { data: body });
-  expect((await (await request.get("/api/state")).json()).credits).toBe(4);
-  for (let i = 0; i < 4; i++)
+  expect((await (await request.get("/api/state")).json()).credits).toBe(2);
+  for (let i = 0; i < 2; i++)
     expect(
       (
         await request.post("/api/roast", {
@@ -108,7 +108,7 @@ test("API rejects blocked requests, repeat rewards, forged rewards and overspend
   expect(
     (await request.post("/api/rewards/daily", { data: {} })).status(),
   ).toBe(400);
-  expect((await (await request.get("/api/state")).json()).credits).toBe(5);
+  expect((await (await request.get("/api/state")).json()).credits).toBe(3);
 });
 test("mobile screens do not overflow, and photo roast charges two credits", async ({
   page,
@@ -137,7 +137,7 @@ test("mobile screens do not overflow, and photo roast charges two credits", asyn
       route + " overflow",
     ).toBe(true);
     if (route === "/") {
-      await expect(page.locator(".credit-badge b")).toHaveText("5");
+      await expect(page.locator(".credit-badge b")).toHaveText("3");
       await page.locator(".insta-dropdown-btn").click();
       await expect(page.locator(".persona-card").last()).toHaveCSS(
         "opacity",
@@ -148,12 +148,12 @@ test("mobile screens do not overflow, and photo roast charges two credits", asyn
     }
   }
   await page.goto("/");
-  await expect(page.locator(".credit-badge b")).toHaveText("5");
+  await expect(page.locator(".credit-badge b")).toHaveText("3");
   await page.locator("input[type=file]").setInputFiles("public/personas.webp");
   await expect(page.locator(".insta-attachment-preview")).toBeVisible();
   await page.locator(".insta-send-btn").click();
   await expect(page.locator(".insta-assistant-bubble").first()).toBeVisible();
-  await expect(page.locator(".credit-badge b")).toHaveText("3");
+  await expect(page.locator(".credit-badge b")).toHaveText("1");
   await page.screenshot({ path: "work/image-mobile.png", fullPage: true });
 
   // Test opening saved replies popup from mobile bottom bar

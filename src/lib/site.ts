@@ -10,7 +10,7 @@ export const publicContent = {
   ] },
   help: { title: "Roast Me AI Help", description: "Learn how to use personas, chaos controls, daily credits, saved roasts, and reporting in Roast Me AI.", eyebrow: "A LITTLE HELP WITH THE HEAT", heading: "Find your way around the roast room.", sections: [
     ["How do I start?", "Continue as a guest or sign in, choose a persona, and send your message. Use the persona menu to try a different comedy style."],
-    ["How do credits work?", "Free credits reset to 5 at 00:00 UTC every day; unused credits do not accumulate. Text replies use 1 credit, image roasts use 2, and a three-round battle uses 3, charged one completed round at a time. Failed or blocked generations do not use credits."],
+    ["How do credits work?", "Free credits reset to 3 at 00:00 UTC every day; unused credits do not accumulate. Text replies use 1 credit, image roasts use 2, and a three-round battle uses 3, charged one completed round at a time. Failed or blocked generations do not use credits."],
     ["How do I change the replies?", "Open roast controls to adjust chaos and choose short, medium, or long replies. Higher chaos asks for more unpredictable angles and sharper punchlines. Your chosen controls are remembered on your device."],
     ["Can I save or report a roast?", "Use the save action beneath a response to keep it in Saved burns. Use Report to flag a response, select a reason, and optionally explain the issue. Account and settings contains your history and account controls."],
     ["What if a request fails?", "Check your internet connection and try again shortly. If the service reports an API quota or configuration issue, the app operator must resolve it. Avoid repeatedly resending the same message."],

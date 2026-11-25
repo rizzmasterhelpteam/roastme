@@ -17,7 +17,7 @@ Open http://localhost:3000. With no Supabase configuration, development automati
 2. Create a Supabase project and run `supabase/schema.sql` in its SQL editor **once on a new project**. Alternatively apply the supplied initial migration with the Supabase CLI. Do not run both copies. Existing projects require review before applying this schema.
 3. Enable anonymous sign-ins, Google OAuth, and manual identity linking in Supabase Auth. Set the Google OAuth client configuration and the Supabase callback in Google Cloud. Enable email authentication and configure production SMTP.
 4. In Supabase Auth URL configuration, set Site URL to your app origin and add `http://localhost:3000/auth/callback` plus your deployment's `/auth/callback` to allowed redirects.
-5. Restart Next.js after changing environment variables. A guest account now lives in Supabase, receives 5 credits from a database trigger, and keeps the same ID when linked to a **new** Google/email identity.
+5. Restart Next.js after changing environment variables. A guest account now lives in Supabase, receives 3 credits from a database trigger, and keeps the same ID when linked to a **new** Google/email identity.
 
 An identity that already belongs to another account cannot be silently merged. The app displays the auth provider's error and preserves the guest identity. A verified operator-assisted account merge is a separate workflow.
 
@@ -49,7 +49,7 @@ Android integrates Google Play Billing directly, with RSA receipt signatures and
 
 - Connect a web checkout provider, or Google Play Billing through an Android wrapper; verify receipts on the server.
 - Process signed provider callbacks with a unique event/receipt ID. Apply subscription status only from a verified server event and reconcile expiry/cancellation/refunds.
-- Connect a rewarded-ad SDK with server-side verification, bind its signed callback to the authenticated user and one-time reward intent, and grant +5 credits in an atomic database transaction with a unique provider event ID.
+- Connect a rewarded-ad SDK with server-side verification, bind its signed callback to the authenticated user and one-time reward intent, and grant +3 credits in an atomic database transaction with a unique provider event ID.
 - Add provider-specific secret variables server-side. Never expose receipts or service-role keys through `NEXT_PUBLIC_*` variables.
 
 Notification and audio toggles are visibly disabled until those features are connected. Dark theme is intentionally always on. Language is English. Priority processing is presented as available only when supported by the eventual backend/provider.

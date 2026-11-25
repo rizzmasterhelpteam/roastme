@@ -265,7 +265,7 @@ test("database notes commit with credits, reject guests/client access, and inval
           [other],
         )
       ).rows[0].credits_balance,
-      5,
+      3,
     );
     await db.query("delete from public.messages where id=$1", [
       first.rows[0].id,
@@ -279,6 +279,7 @@ test("database notes commit with credits, reject guests/client access, and inval
       ).rows.length,
       0,
     );
+    await db.query("update public.profiles set credits_balance=3 where id=$1", [owner]);
     await finish(owner, session, "Stale summary must not come back.", 0);
     assert.equal(
       (
