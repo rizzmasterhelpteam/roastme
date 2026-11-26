@@ -1,4 +1,5 @@
 import "server-only";
+import DodoPayments from "dodopayments";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { z } from "zod";
 import {
@@ -58,16 +59,38 @@ async function ensureCustomer(db: SupabaseClient, user: User) {
   );
   return (await customerFor(db, user.id))!;
 }
-export async function webBillingStatus() {
+export async function webBillingStatus(request: Request) {
   if (!dodoConfigured()) return { configured: false, products: [] };
   const client = dodoClient();
+  type BillingAddress = DodoPayments.CheckoutSessions.CheckoutSessionBillingAddress;
+  const country = request.headers.get("x-vercel-ip-country");
+  const billingAddress = country && /^[A-Z]{2}$/.test(country)
+    ? { country: country as BillingAddress["country"] }
+    : undefined;
   const products = await Promise.all(
-    (["weekly", "monthly"] as const).map(async (plan) =>
-      validateDodoProduct(
-        await client.products.retrieve(dodoProduct(plan)),
-        plan,
-      ),
-    ),
+    (["weekly", "monthly"] as const).map(async (plan) => {
+      const productId = dodoProduct(plan);
+      validateDodoProduct(await client.products.retrieve(productId), plan);
+      if (!billingAddress) return { plan, priceString: "" };
+      try {
+        const quote = await client.checkoutSessions.preview({
+          product_cart: [{ product_id: productId, quantity: 1 }],
+          billing_address: billingAddress,
+        });
+        const amount = quote.recurring_breakup?.total_amount;
+        if (typeof amount === "number" && Number.isFinite(amount) && amount >= 0) {
+          const format = new Intl.NumberFormat("en", { style: "currency", currency: quote.currency });
+          const digits = format.resolvedOptions().maximumFractionDigits!;
+          return { plan, priceString: format.format(amount / 10 ** digits) };
+        }
+      } catch (error) {
+        console.warn("Dodo price preview unavailable", {
+          plan, country,
+          status: error instanceof DodoPayments.APIError ? error.status : undefined,
+        });
+      }
+      return { plan, priceString: "" };
+    }),
   );
   return { configured: true, products };
 }

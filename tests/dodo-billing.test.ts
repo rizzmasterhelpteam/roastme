@@ -11,14 +11,21 @@ test("hosted checkout and webhook reconciliation use trusted account/product dat
     import assert from 'node:assert/strict';
     registerHooks({resolve(s,c,next){return s==='server-only'?{url:'data:text/javascript,export{}',shortCircuit:true}:next(s,c)}});
     Object.assign(process.env,{DODO_PAYMENTS_API_KEY:'synthetic-key',DODO_PAYMENTS_WEBHOOK_KEY:'whsec_'+Buffer.from('synthetic-webhook-secret').toString('base64'),DODO_PAYMENTS_WEEKLY_PRODUCT_ID:'pdt_weekly',DODO_PAYMENTS_MONTHLY_PRODUCT_ID:'pdt_monthly',DODO_PAYMENTS_ENVIRONMENT:'live_mode'});
-    const { webCheckout, syncDodoSubscription, handleDodoEvent } = await import('./src/lib/server/web-billing.ts');
+    const { webBillingStatus, webCheckout, syncDodoSubscription, handleDodoEvent } = await import('./src/lib/server/web-billing.ts');
     const calls=[], applied=[], processed=new Set();
     let refundedPeriod = null;
     const product={product_id:'pdt_monthly',is_recurring:true,price:{type:'recurring_price',currency:'USD',price:1599,payment_frequency_interval:'Month',payment_frequency_count:1}};
     const sub={subscription_id:'sub_example',product_id:'pdt_monthly',customer:{customer_id:'cus_owned'},metadata:{app:'roastme',supabase_user_id:'owner'},status:'cancelled',previous_billing_date:new Date().toISOString(),next_billing_date:new Date(Date.now()+86400000).toISOString(),payment_frequency_interval:'Month',payment_frequency_count:1,on_demand:false};
     globalThis.fetch=async (url,init)=>{
       const path=new URL(url).pathname; calls.push({path,init});
+      if(path.endsWith('/products/pdt_weekly')) return Response.json({...product,product_id:'pdt_weekly',price:{...product.price,payment_frequency_interval:'Week'}});
       if(path.includes('/products/')) return Response.json(product);
+      if(path.endsWith('/checkouts/preview')) {
+        const body=JSON.parse(init.body);
+        assert.equal(body.billing_address.country,'IN');
+        const weekly=body.product_cart[0].product_id==='pdt_weekly';
+        return Response.json({currency:'INR',recurring_breakup:{total_amount:weekly?19900:49900}});
+      }
       if(path.includes('/payments/')) return Response.json({refund_status:'full',subscription_ids:['sub_example'],service_periods:[{subscription_id:'sub_example',ends_at:refundedPeriod}],created_at:'2000-01-01T00:00:00Z'});
       if(path.includes('/subscriptions/')) return Response.json(sub);
       if(path.endsWith('/checkouts')) {
@@ -33,6 +40,11 @@ test("hosted checkout and webhook reconciliation use trusted account/product dat
       throw Error('Unexpected Dodo API path: '+path);
     };
     const db={from(table){let filters={}; return {select(){return this},eq(k,v){filters[k]=v;return this},async maybeSingle(){return {error:null,data:table==='dodo_customers'?{customer_id:'cus_owned',user_id:'owner'}:processed.has(filters.event_id)?{event_id:filters.event_id}:null}},async upsert(row){processed.add(row.event_id);return {error:null}}}},async rpc(name,args){applied.push(args);return {error:null}}};
+    const prices=await webBillingStatus(new Request('https://www.roastme-ai.com',{headers:{'x-vercel-ip-country':'IN'}}));
+    assert.deepEqual(prices.products.map(p=>p.priceString),['₹199.00','₹499.00']);
+    const withoutCountry=await webBillingStatus(new Request('https://www.roastme-ai.com'));
+    assert.ok(withoutCountry.configured);
+    assert.deepEqual(withoutCountry.products.map(p=>p.priceString),['','']);
     assert.equal((await webCheckout(db,{id:'owner',email:'synthetic@example.com'},'monthly')).url,'https://checkout.dodopayments.com/session/example');
     await assert.rejects(syncDodoSubscription(db,'sub_example','someone-else'),/different account/);
     assert.equal(applied.length,0);

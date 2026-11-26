@@ -46,7 +46,9 @@ async function handle(
     if (path.startsWith("billing/web/")) {
       if (b.demo) throw new ApiError("Web subscriptions are not configured yet.", 503);
       if (request.method === "GET" && path === "billing/web/status")
-        return NextResponse.json(await webBillingStatus());
+        return NextResponse.json(await webBillingStatus(request), {
+          headers: { "Cache-Control": "private, no-store" },
+        });
       if (b.user.is_anonymous) throw new ApiError("Sign in to an account before purchasing Premium.", 401);
       if (request.method !== "POST") throw new ApiError("Not found", 404);
       const raw = await request.text();

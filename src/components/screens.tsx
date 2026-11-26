@@ -3402,8 +3402,8 @@ function Premium({ inModal = false }: { inModal?: boolean }) {
             <span className="radio-dot" />
             <span>
               <b>
-                {storePrices[p.id] || (pricesLoaded ? "Unavailable" : "Loading…")}
-                <small> / {p.unit}</small>
+                {storePrices[p.id] || (pricesLoaded ? (!isNative() && storeReady ? "Price at checkout" : "Unavailable") : "Loading…")}
+                {storePrices[p.id] && <small> / {p.unit}</small>}
               </b>
               <small>Billed {p.id}</small>
             </span>
@@ -3415,7 +3415,7 @@ function Premium({ inModal = false }: { inModal?: boolean }) {
       </div>
       <Button
         className="wide"
-        disabled={busy || state.premium || (!state.guest && (!storeReady || !storePrices[plan]))}
+        disabled={busy || state.premium || (!state.guest && (!storeReady || (isNative() && !storePrices[plan])))}
         onClick={() => state.guest ? router.push("/sign-in") : void run(() => isNative() ? api("billing/checkout", { plan }) : webBillingAction(api, "checkout", { plan }))}
       >
         <Crown size={19} />
@@ -3424,7 +3424,7 @@ function Premium({ inModal = false }: { inModal?: boolean }) {
       </Button>
       <p className="paywall-note">
         {storeReady
-          ? isNative() ? "Billed through Google Play. Auto-renews until cancelled in Play subscriptions." : "Secure web checkout. Auto-renews until cancelled. Final currency and any taxes are shown at checkout."
+          ? isNative() ? "Billed through Google Play. Auto-renews until cancelled in Play subscriptions." : "Auto-renews until cancelled. Dodo confirms your currency, discounts and taxes at checkout."
           : "Subscriptions are not configured. No payment is taken."}
         <br />
         Fair use and abuse protection apply. *Priority when available.
