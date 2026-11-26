@@ -71,19 +71,21 @@ export function validateDodoProduct(
   plan: WebPlan,
 ) {
   const price = product.price;
-  if (
-    product.product_id !== dodoProduct(plan) ||
-    !product.is_recurring ||
-    price.type !== "recurring_price" ||
-    price.payment_frequency_count !== 1 ||
-    price.payment_frequency_interval !==
-      (plan === "weekly" ? "Week" : "Month") ||
-    price.price <= 0 ||
-    (price.trial_period_days || 0) > 0
-  )
-    throw new WebBillingError(
-      "This subscription’s billing period or price is not configured correctly.",
-    );
+  const expectedInterval = plan === "weekly" ? "Week" : "Month";
+  const issues: string[] = [];
+  if (product.product_id !== dodoProduct(plan)) issues.push("product ID mismatch");
+  if (!product.is_recurring || price.type !== "recurring_price") {
+    issues.push("a recurring subscription product is required");
+  } else {
+    if (price.payment_frequency_count !== 1 || price.payment_frequency_interval !== expectedInterval)
+      issues.push(`billing must be every 1 ${expectedInterval.toLowerCase()} (received ${price.payment_frequency_count} ${price.payment_frequency_interval})`);
+    if (price.price <= 0) issues.push("the price must be greater than zero");
+    if ((price.trial_period_days || 0) > 0) issues.push("the free trial must be disabled");
+  }
+  if (issues.length || price.type !== "recurring_price") {
+    console.error("Dodo product validation failed", { plan, issues });
+    throw new WebBillingError(`The ${plan} subscription billing period or price is invalid: ${issues.join("; ")}.`);
+  }
   const currency = price.currency;
   const digits = new Intl.NumberFormat("en", {
     style: "currency",
